@@ -15,6 +15,11 @@ Primary source projects:
 - `AgentBrowserUi/`
 - `SingBoxStart/`
 - `SingBoxStop/`
+- `libs/`
+
+Future platform-specific source should live under:
+
+- `platforms/<platform>/`
 
 Legacy projects:
 

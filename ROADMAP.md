@@ -11,6 +11,7 @@
 - split current browser state into portable and local-only categories
 - create a workspace manifest and session-status model
 - execute the first extraction batch from `WORKSPACE_V2_BACKLOG.md`
+- keep the macOS foundation branch as structure-only until a real runtime choice is made
 
 ## Medium Term
 
@@ -25,7 +26,7 @@
 - add workspace export/import flow
 - add explicit re-auth checklist after workspace import
 - add per-device workspace identity
-- define macOS platform boundary and shared-vs-platform-specific module split before starting implementation
+- choose the first macOS runtime experiment and wire it into `platforms/macos/`
 
 ## Long Term
 

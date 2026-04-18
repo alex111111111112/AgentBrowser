@@ -401,3 +401,42 @@ Change summary:
 - accepted a single-repository strategy for Windows now and macOS later
 - updated roadmap and status to treat macOS as planned rather than delivered
 - prepared the repository narrative for the first GitHub push
+
+## 2026-04-18 13:57:16 +09
+
+Reason for change:
+
+- prepare a real macOS foundation branch without committing to a runtime implementation yet
+- define stable platform naming and folder boundaries before macOS code starts
+- externalize heavy release artifacts out of the working repository tree
+
+Files edited:
+
+- `ADR/ADR-0009-platform-specific-source-lives-under-platforms.md`
+- `platforms/README.md`
+- `platforms/macos/README.md`
+- `platforms/macos/app/.gitkeep`
+- `platforms/macos/runtime/.gitkeep`
+- `platforms/macos/packaging/.gitkeep`
+- `README.md`
+- `ARCHITECTURE.md`
+- `ROADMAP.md`
+- `STATUS.md`
+- `AGENTS.md`
+- `REPO_SETUP.md`
+- `SOURCES_OF_TRUTH.md`
+- `DOCUMENT_REGISTRY.md`
+- `DECISION_LOG.md`
+- `DEVLOG.md`
+
+Package notes:
+
+- no packaged binaries were rebuilt
+- no Windows runtime artifacts were refreshed in this change
+- heavy release artifacts were moved out of the repo working tree into external storage
+
+Change summary:
+
+- created a platform skeleton for future macOS work under `platforms/macos/`
+- accepted a stable platform layout rule around `platforms/<platform>` and shared `libs/`
+- prepared the repository to stay source-focused while runtime artifacts live on external storage

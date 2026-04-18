@@ -31,6 +31,7 @@ Use it when:
 | Workspace layout and session state files | `libs/AgentBrowser.Workspaces/*` | `ARCHITECTURE.md`, `WORKSPACE_V2_BACKLOG.md` | Includes `workspaces/default/*` conventions |
 | Support bundle contents and diagnostics export | `libs/AgentBrowser.Support/*`, `SupportTool/Program.cs` | `AgentBrowser_Windows/README.txt` | Support runtime behavior is code-driven |
 | Repository hygiene and GitHub publishing | `REPO_SETUP.md`, `.gitignore` | `README.md`, `AGENTS.md` | Source repo tracks code and docs; runtime bundles stay out of normal git history |
+| Platform folder layout | `platforms/README.md`, `platforms/macos/README.md` | `README.md`, `ARCHITECTURE.md` | Shared logic stays in `libs/`; platform-local work goes under `platforms/<platform>/` |
 | Change completion gate | `CHANGE_CHECKLIST.md`, `AGENTS.md` | `DEVLOG.md`, `PULL_REQUEST_TEMPLATE.md` | Checklist and contributor rules define when a change is done |
 | Release readiness and package sign-off | `RELEASE_CHECKLIST.md` | `AgentBrowser_Windows/README.txt`, `DEVLOG.md` | Release checklist governs package completion |
 | Current project health and risks | `STATUS.md` | `README.md`, `DEVLOG.md` | `STATUS.md` is the canonical summary |

@@ -25,6 +25,10 @@ Not yet implemented:
 - macOS packaging
 - macOS operator flow
 
+Prepared but still empty:
+
+- `platforms/macos/` foundation skeleton
+
 ## Stable Areas
 
 - SOCKS-based startup path

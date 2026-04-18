@@ -21,6 +21,7 @@ The Git repository should track:
 - lightweight package manuals in `AgentBrowser_Windows/`
 - the default solution file `AgentBrowser.sln`
 - future macOS source projects when that implementation starts
+- platform skeleton docs and folders under `platforms/`
 
 The Git repository should not track:
 
@@ -46,6 +47,18 @@ Use local disk, an external SSD, or GitHub Releases for:
 - packaged Windows bundles
 - zipped release candidates
 - downloaded browser or tunnel vendor payloads
+
+Recommended external artifact layout:
+
+```text
+<artifact-root>/
+├── runtime/
+│   └── AgentBrowser_Windows/
+├── releases/
+│   └── AgentBrowser_Windows.zip
+└── vendor/
+    └── resurs/
+```
 
 Do not treat the packaged runtime directory as the source repository.
 

@@ -6,6 +6,8 @@ The project packages a controlled Windows browser environment that launches a bu
 
 It is best understood as a managed browser runtime, not as an anti-detect browser core.
 
+The current runtime is Windows-only, but the repository is allowed to host future platform tracks as long as shared logic remains in `libs/` and platform-local work stays under `platforms/<platform>/`.
+
 ## Active Runtime Path
 
 ```text
@@ -96,6 +98,11 @@ Source projects:
 - `AgentBrowserUi/*`
 - `SingBoxStart/*`
 - `SingBoxStop/*`
+- `libs/*`
+
+Platform foundation:
+
+- `platforms/macos/*`
 
 Packaged runtime:
 

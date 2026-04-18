@@ -26,6 +26,8 @@ If a new durable document is added and meant to stay in the project, register it
 | --- | --- | --- | --- | --- |
 | `README.md` | Active | maintainers, new readers | repository entry point, product framing, docs index | when product framing, build flow, or docs index changes |
 | `REPO_SETUP.md` | Active | maintainers, release owner | authoritative repository boundary and GitHub preparation guide | when tracked vs ignored repository scope changes |
+| `platforms/README.md` | Supporting | maintainers, future platform owners | platform folder layout and naming convention | when platform folder conventions change |
+| `platforms/macos/README.md` | Supporting | maintainers, future macOS owners | foundation scope and directory purpose for future macOS work | when macOS platform skeleton or scope changes |
 | `RELEASE_CHECKLIST.md` | Active | maintainers, release owner | release and package completion checklist | when release process or package completion rules change |
 | `CHANGE_CHECKLIST.md` | Active | maintainers, coding agents | non-trivial change completion checklist | when completion rules change |
 | `PULL_REQUEST_TEMPLATE.md` | Supporting | maintainers | structured summary template for PR or change review | when review expectations change |
@@ -50,6 +52,7 @@ If a new durable document is added and meant to stay in the project, register it
 | `ADR/ADR-0006-operator-main-screen-and-locked-settings.md` | Supporting | engineers, product owner | decision record for operator-only main screen and separate locked admin settings | when superseded by a later UX decision |
 | `ADR/ADR-0007-source-repository-excludes-runtime-artifacts.md` | Supporting | maintainers, release owner | decision record for keeping source history separate from packaged runtime artifacts | when superseded by a later repository-boundary decision |
 | `ADR/ADR-0008-single-source-repo-for-windows-and-future-macos.md` | Supporting | maintainers, product owner | decision record for using one source repository for current Windows work and future macOS work | when superseded by a later platform-repository decision |
+| `ADR/ADR-0009-platform-specific-source-lives-under-platforms.md` | Supporting | maintainers, platform owners | decision record for platform-specific source living under `platforms/<platform>` while shared logic remains in `libs/` | when superseded by a later platform-layout decision |
 | `AgentBrowser_Windows/README.txt` | Package | Windows operator, admin | in-package quick instructions | when package UX or shipped tools change |
 | `AgentBrowser_Windows/BASIC_USER_MANUAL.txt` | Package | operator | short user manual for Basic mode | when operator flow changes |
 | `AgentBrowser_Windows/PRO_USER_MANUAL.txt` | Package | admin | short user manual for Pro mode | when admin flow or gating changes |

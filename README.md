@@ -78,6 +78,18 @@ Default excluded local artifacts:
 
 Use `REPO_SETUP.md` together with `.gitignore` as the authoritative repo-boundary guide when preparing GitHub pushes or moving the working copy to an external drive.
 
+## Platform Layout
+
+Shared logic belongs in `libs/`.
+
+Platform-specific implementation belongs in `platforms/<platform>/`.
+
+Current foundation:
+
+- `platforms/macos/` exists as a skeleton only
+- there is not yet a real macOS runtime implementation
+- Windows remains the active runtime path through the current root projects
+
 ## Main Components
 
 - `AgentBrowserUi/Program.cs`: Windows UI for presets, config generation, validation, and launching helper executables
@@ -198,6 +210,8 @@ Delivery scope today:
 ## Docs Index
 
 - `REPO_SETUP.md`
+- `platforms/README.md`
+- `platforms/macos/README.md`
 - `RELEASE_CHECKLIST.md`
 - `CHANGE_CHECKLIST.md`
 - `PULL_REQUEST_TEMPLATE.md`
