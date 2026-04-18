@@ -1,0 +1,64 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="using:AgentBrowser.MacShell"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="AgentBrowser.MacShell.MainWindow"
+        x:DataType="local:ShellSummary"
+        Width="960"
+        Height="680"
+        MinWidth="860"
+        MinHeight="620"
+        Title="{Binding WindowTitle}">
+    <ScrollViewer>
+        <StackPanel Margin="24" Spacing="16">
+            <Border Padding="20" CornerRadius="16" Background="#1B2A41">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="{Binding Heading}" FontSize="28" FontWeight="SemiBold" Foreground="White" />
+                    <TextBlock Text="{Binding Subheading}" TextWrapping="Wrap" Foreground="#D7E3F4" />
+                </StackPanel>
+            </Border>
+
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="16" RowSpacing="16">
+                <Border Grid.Column="0" Grid.Row="0" Padding="16" CornerRadius="12" Background="#F3F6FA">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Shell Status" FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding ShellStatus}" />
+                        <TextBlock Text="Platform" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding PlatformName}" TextWrapping="Wrap" />
+                        <TextBlock Text="Shared Libraries" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding SharedLibraries}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1" Grid.Row="0" Padding="16" CornerRadius="12" Background="#F3F6FA">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Runtime Boundary" FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding RuntimeBoundary}" TextWrapping="Wrap" />
+                        <TextBlock Text="Next Steps" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding NextSteps}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" Padding="16" CornerRadius="12" Background="#FAFBFD">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Writable Paths" FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="Bundle base directory" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding BundleBaseDir}" TextWrapping="Wrap" />
+                        <TextBlock Text="Application support root" FontWeight="SemiBold" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding AppSupportRoot}" TextWrapping="Wrap" />
+                        <TextBlock Text="Workspace root" FontWeight="SemiBold" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding WorkspaceRoot}" TextWrapping="Wrap" />
+                        <TextBlock Text="Manifest path" FontWeight="SemiBold" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding ManifestPath}" TextWrapping="Wrap" />
+                        <TextBlock Text="Session status path" FontWeight="SemiBold" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding SessionStatusPath}" TextWrapping="Wrap" />
+                        <TextBlock Text="Log path" FontWeight="SemiBold" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding LogPath}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</Window>

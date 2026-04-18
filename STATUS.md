@@ -25,9 +25,16 @@ Not yet implemented:
 - macOS packaging
 - macOS operator flow
 
-Prepared but still empty:
+Prepared and buildable:
 
-- `platforms/macos/` foundation skeleton
+- `platforms/macos/AgentBrowser.Mac.sln`
+- `platforms/macos/app/AgentBrowser.MacShell/`
+
+Current macOS shell scope:
+
+- basic Avalonia desktop shell
+- shared workspace and diagnostics wiring
+- no tunnel/runtime orchestration yet
 
 Selected first macOS experiment:
 

@@ -11,8 +11,7 @@
 - split current browser state into portable and local-only categories
 - create a workspace manifest and session-status model
 - execute the first extraction batch from `WORKSPACE_V2_BACKLOG.md`
-- keep the macOS foundation branch as structure-only until a real runtime choice is made
-- record the first macOS runtime experiment as an `Avalonia` shell without tunnel work
+- validate the first `Avalonia`-based macOS shell as a stable developer entry point
 
 ## Medium Term
 
@@ -27,8 +26,8 @@
 - add workspace export/import flow
 - add explicit re-auth checklist after workspace import
 - add per-device workspace identity
-- choose the first macOS runtime experiment and wire it into `platforms/macos/`
-- build the first macOS operator shell in `platforms/macos/app/`
+- extend the macOS shell with real operator-state presentation and settings seams
+- decide the first macOS runtime seam under `platforms/macos/runtime/`
 
 ## Long Term
 

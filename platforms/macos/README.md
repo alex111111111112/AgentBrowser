@@ -1,8 +1,8 @@
 # macOS Foundation
 
-This directory is the placeholder for future macOS implementation work.
+This directory is the foundation for future macOS implementation work.
 
-It is intentionally empty of runtime code right now.
+It now contains the first minimal shell project, but it still does not contain a macOS runtime implementation.
 
 Purpose:
 
@@ -15,12 +15,15 @@ Current skeleton:
 ```text
 platforms/macos/
 ├── app/
+│   └── AgentBrowser.MacShell/
 ├── runtime/
 └── packaging/
 ```
 
 Scope of this foundation step:
 
+- `Avalonia`-based desktop shell scaffold
+- shared workspace/logging integration
 - no runtime implementation
 - no launcher
 - no browser packaging

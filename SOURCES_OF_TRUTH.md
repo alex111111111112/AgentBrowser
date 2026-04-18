@@ -33,6 +33,7 @@ Use it when:
 | Repository hygiene and GitHub publishing | `REPO_SETUP.md`, `.gitignore` | `README.md`, `AGENTS.md` | Source repo tracks code and docs; runtime bundles stay out of normal git history |
 | Platform folder layout | `platforms/README.md`, `platforms/macos/README.md` | `README.md`, `ARCHITECTURE.md` | Shared logic stays in `libs/`; platform-local work goes under `platforms/<platform>/` |
 | First macOS experiment choice | `MACOS_RUNTIME_OPTIONS.md`, `ADR/ADR-0010-first-macos-experiment-uses-avalonia-shell.md` | `ROADMAP.md`, `STATUS.md` | Current first spike is an `Avalonia` shell, not runtime parity |
+| Current macOS shell behavior | `platforms/macos/app/AgentBrowser.MacShell/*` | `platforms/macos/README.md`, `ARCHITECTURE.md` | This is the implementation source for the first buildable macOS shell |
 | Change completion gate | `CHANGE_CHECKLIST.md`, `AGENTS.md` | `DEVLOG.md`, `PULL_REQUEST_TEMPLATE.md` | Checklist and contributor rules define when a change is done |
 | Release readiness and package sign-off | `RELEASE_CHECKLIST.md` | `AgentBrowser_Windows/README.txt`, `DEVLOG.md` | Release checklist governs package completion |
 | Current project health and risks | `STATUS.md` | `README.md`, `DEVLOG.md` | `STATUS.md` is the canonical summary |

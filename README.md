@@ -87,6 +87,8 @@ Platform-specific implementation belongs in `platforms/<platform>/`.
 Current foundation:
 
 - `platforms/macos/` exists as a skeleton only
+- `platforms/macos/app/AgentBrowser.MacShell/` is the first buildable macOS shell project
+- `platforms/macos/AgentBrowser.Mac.sln` is the platform-local solution entry point
 - there is not yet a real macOS runtime implementation
 - Windows remains the active runtime path through the current root projects
 - the selected first macOS experiment is an `Avalonia` shell, not runtime parity

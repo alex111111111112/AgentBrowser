@@ -473,3 +473,40 @@ Change summary:
 - compared the current macOS stack options and selected an `Avalonia` shell as the first experiment
 - explicitly deferred tunnel, entitlement, and packaging parity work
 - gave the `macos-foundation` branch a concrete next implementation target
+
+## 2026-04-18 14:22:27 +09
+
+Reason for change:
+
+- convert the macOS foundation branch from documentation-only structure into a real buildable shell project
+- prove that `Avalonia 12.0.1` can build on the current `.NET 8` toolchain with our shared libraries
+- establish a platform-local solution entry point for future macOS work
+
+Files edited:
+
+- `platforms/macos/app/AgentBrowser.MacShell/AgentBrowser.MacShell.csproj`
+- `platforms/macos/app/AgentBrowser.MacShell/MacShellPaths.cs`
+- `platforms/macos/app/AgentBrowser.MacShell/ShellSummary.cs`
+- `platforms/macos/app/AgentBrowser.MacShell/MainWindow.axaml`
+- `platforms/macos/app/AgentBrowser.MacShell/MainWindow.axaml.cs`
+- `platforms/macos/AgentBrowser.Mac.sln`
+- `platforms/macos/README.md`
+- `README.md`
+- `ARCHITECTURE.md`
+- `ROADMAP.md`
+- `STATUS.md`
+- `REPO_SETUP.md`
+- `SOURCES_OF_TRUTH.md`
+- `DEVLOG.md`
+
+Package notes:
+
+- no packaged binaries were rebuilt
+- no Windows runtime artifacts were refreshed in this change
+- `dotnet build platforms/macos/AgentBrowser.Mac.sln -c Release` passed successfully
+
+Change summary:
+
+- created the first buildable macOS shell project under `platforms/macos/app/`
+- connected it to shared workspace and diagnostics libraries
+- introduced a separate platform-local macOS solution for future work

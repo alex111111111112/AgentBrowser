@@ -80,6 +80,21 @@ Responsibilities:
 - tolerate transient process inspection failures
 - write `stop.log`
 
+### `platforms/macos/app/AgentBrowser.MacShell`
+
+Responsibilities:
+
+- prove a launchable macOS desktop shell
+- reuse shared workspace and diagnostics libraries
+- choose a writable macOS-local app-support path
+- define the seam between future macOS app, runtime, and packaging layers
+
+Constraints:
+
+- no tunnel orchestration
+- no entitlement or privilege handling
+- no packaging or notarization work in this first shell
+
 ### `core/config.json`
 
 Responsibilities:
@@ -103,6 +118,7 @@ Source projects:
 Platform foundation:
 
 - `platforms/macos/*`
+- `platforms/macos/app/AgentBrowser.MacShell/*`
 
 Packaged runtime:
 

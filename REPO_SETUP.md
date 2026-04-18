@@ -72,6 +72,10 @@ Legacy Xray prototypes remain in the tree for reference, but they are not part o
 
 Future macOS projects may live in the same repository, but they should be added only when there is a real implementation track.
 
+For the current macOS spike, use:
+
+- `platforms/macos/AgentBrowser.Mac.sln`
+
 ## GitHub Preparation Flow
 
 Recommended first-time sequence:
