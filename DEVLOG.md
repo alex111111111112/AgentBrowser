@@ -440,3 +440,36 @@ Change summary:
 - created a platform skeleton for future macOS work under `platforms/macos/`
 - accepted a stable platform layout rule around `platforms/<platform>` and shared `libs/`
 - prepared the repository to stay source-focused while runtime artifacts live on external storage
+
+## 2026-04-18 14:22:27 +09
+
+Reason for change:
+
+- choose the first real macOS experiment instead of leaving the foundation branch stack-agnostic
+- narrow the candidate stacks and reject over-ambitious first-step plans
+- document the first spike as a shell-first experiment rather than runtime parity
+
+Files edited:
+
+- `MACOS_RUNTIME_OPTIONS.md`
+- `ADR/ADR-0010-first-macos-experiment-uses-avalonia-shell.md`
+- `README.md`
+- `ROADMAP.md`
+- `STATUS.md`
+- `AGENTS.md`
+- `SOURCES_OF_TRUTH.md`
+- `DOCUMENT_REGISTRY.md`
+- `DECISION_LOG.md`
+- `DEVLOG.md`
+
+Package notes:
+
+- no packaged binaries were rebuilt
+- no Windows runtime artifacts were refreshed in this change
+- this was a macOS planning and governance update only
+
+Change summary:
+
+- compared the current macOS stack options and selected an `Avalonia` shell as the first experiment
+- explicitly deferred tunnel, entitlement, and packaging parity work
+- gave the `macos-foundation` branch a concrete next implementation target

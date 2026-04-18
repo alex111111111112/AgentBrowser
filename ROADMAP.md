@@ -12,6 +12,7 @@
 - create a workspace manifest and session-status model
 - execute the first extraction batch from `WORKSPACE_V2_BACKLOG.md`
 - keep the macOS foundation branch as structure-only until a real runtime choice is made
+- record the first macOS runtime experiment as an `Avalonia` shell without tunnel work
 
 ## Medium Term
 
@@ -27,6 +28,7 @@
 - add explicit re-auth checklist after workspace import
 - add per-device workspace identity
 - choose the first macOS runtime experiment and wire it into `platforms/macos/`
+- build the first macOS operator shell in `platforms/macos/app/`
 
 ## Long Term
 

@@ -26,6 +26,7 @@ If a new durable document is added and meant to stay in the project, register it
 | --- | --- | --- | --- | --- |
 | `README.md` | Active | maintainers, new readers | repository entry point, product framing, docs index | when product framing, build flow, or docs index changes |
 | `REPO_SETUP.md` | Active | maintainers, release owner | authoritative repository boundary and GitHub preparation guide | when tracked vs ignored repository scope changes |
+| `MACOS_RUNTIME_OPTIONS.md` | Supporting | maintainers, future macOS owners | current option analysis and first chosen macOS experiment scope | when the first macOS stack decision changes |
 | `platforms/README.md` | Supporting | maintainers, future platform owners | platform folder layout and naming convention | when platform folder conventions change |
 | `platforms/macos/README.md` | Supporting | maintainers, future macOS owners | foundation scope and directory purpose for future macOS work | when macOS platform skeleton or scope changes |
 | `RELEASE_CHECKLIST.md` | Active | maintainers, release owner | release and package completion checklist | when release process or package completion rules change |
@@ -53,6 +54,7 @@ If a new durable document is added and meant to stay in the project, register it
 | `ADR/ADR-0007-source-repository-excludes-runtime-artifacts.md` | Supporting | maintainers, release owner | decision record for keeping source history separate from packaged runtime artifacts | when superseded by a later repository-boundary decision |
 | `ADR/ADR-0008-single-source-repo-for-windows-and-future-macos.md` | Supporting | maintainers, product owner | decision record for using one source repository for current Windows work and future macOS work | when superseded by a later platform-repository decision |
 | `ADR/ADR-0009-platform-specific-source-lives-under-platforms.md` | Supporting | maintainers, platform owners | decision record for platform-specific source living under `platforms/<platform>` while shared logic remains in `libs/` | when superseded by a later platform-layout decision |
+| `ADR/ADR-0010-first-macos-experiment-uses-avalonia-shell.md` | Supporting | maintainers, future macOS owners | decision record for the first macOS experiment using an `Avalonia` shell instead of full runtime parity | when superseded by a later macOS experiment decision |
 | `AgentBrowser_Windows/README.txt` | Package | Windows operator, admin | in-package quick instructions | when package UX or shipped tools change |
 | `AgentBrowser_Windows/BASIC_USER_MANUAL.txt` | Package | operator | short user manual for Basic mode | when operator flow changes |
 | `AgentBrowser_Windows/PRO_USER_MANUAL.txt` | Package | admin | short user manual for Pro mode | when admin flow or gating changes |

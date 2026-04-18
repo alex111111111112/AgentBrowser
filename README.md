@@ -89,6 +89,7 @@ Current foundation:
 - `platforms/macos/` exists as a skeleton only
 - there is not yet a real macOS runtime implementation
 - Windows remains the active runtime path through the current root projects
+- the selected first macOS experiment is an `Avalonia` shell, not runtime parity
 
 ## Main Components
 
@@ -210,6 +211,7 @@ Delivery scope today:
 ## Docs Index
 
 - `REPO_SETUP.md`
+- `MACOS_RUNTIME_OPTIONS.md`
 - `platforms/README.md`
 - `platforms/macos/README.md`
 - `RELEASE_CHECKLIST.md`

@@ -29,6 +29,11 @@ Prepared but still empty:
 
 - `platforms/macos/` foundation skeleton
 
+Selected first macOS experiment:
+
+- `Avalonia` desktop shell
+- no tunnel/runtime parity in the first spike
+
 ## Stable Areas
 
 - SOCKS-based startup path

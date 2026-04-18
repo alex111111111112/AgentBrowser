@@ -31,6 +31,7 @@ Detailed decisions live in `ADR/`.
 | `ADR-0007` | Source Repository Excludes Runtime Artifacts | Accepted | 2026-04-18 | repository boundary |
 | `ADR-0008` | Single Source Repository For Windows And Future macOS | Accepted | 2026-04-18 | platform repository scope |
 | `ADR-0009` | Platform-Specific Source Lives Under `platforms/<platform>` | Accepted | 2026-04-18 | platform layout |
+| `ADR-0010` | First macOS Experiment Uses An Avalonia Desktop Shell | Accepted | 2026-04-18 | macOS experiment strategy |
 
 ## Rules
 

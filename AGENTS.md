@@ -21,6 +21,11 @@ Future platform-specific source should live under:
 
 - `platforms/<platform>/`
 
+Current macOS experiment assumption:
+
+- first macOS spike is an `Avalonia` shell under `platforms/macos/app/`
+- do not jump straight to `TUN`, entitlements, or packaging parity in the first macOS change
+
 Legacy projects:
 
 - root `Program.cs` and `Launcher.csproj`
