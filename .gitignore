@@ -1,0 +1,35 @@
+# macOS
+.DS_Store
+**/.DS_Store
+._*
+__MACOSX/
+Thumbs.db
+
+# Editor and IDE state
+.vs/
+.vscode/
+
+# .NET build outputs
+**/bin/
+**/obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Local logs and support artifacts
+*.log
+support-bundle*.zip
+
+# Local publish scratch
+.publish-*/
+
+# Packaged runtime artifacts
+AgentBrowser_Windows.zip
+AgentBrowser_Windows/*
+!AgentBrowser_Windows/README.txt
+!AgentBrowser_Windows/BASIC_USER_MANUAL.txt
+!AgentBrowser_Windows/PRO_USER_MANUAL.txt
+
+# Downloaded vendor resources and local release inputs
+resurs/

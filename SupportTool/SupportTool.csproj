@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <PublishSingleFile>true</PublishSingleFile>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>SupportTool</AssemblyName>
+    <RootNamespace>AgentBrowserSupportTool</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\libs\AgentBrowser.Support\AgentBrowser.Support.csproj" />
+    <ProjectReference Include="..\libs\AgentBrowser.Diagnostics\AgentBrowser.Diagnostics.csproj" />
+  </ItemGroup>
+
+</Project>
