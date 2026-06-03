@@ -8,6 +8,7 @@ Thumbs.db
 # Editor and IDE state
 .vs/
 .vscode/
+.idea/
 
 # .NET build outputs
 **/bin/
@@ -20,6 +21,13 @@ Thumbs.db
 # Local logs and support artifacts
 *.log
 support-bundle*.zip
+
+# Local agent/browser runtime artifacts
+.specstory/
+.codex-temp/
+.codex-temp-*
+.playwright-cli/
+test-results/
 
 # Local publish scratch
 .publish-*/
