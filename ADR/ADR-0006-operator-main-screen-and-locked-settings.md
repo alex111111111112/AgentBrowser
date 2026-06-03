@@ -29,7 +29,9 @@ Behavior:
 
 - the main screen shows only the current preset, masked summary, runtime state, connection health, and main actions
 - preset editing, connection editing, `Test`, `Apply`, `Duplicate`, `Rename`, and `Delete` live in `Settings`
-- `Settings` is gated by `pro-mode.flag` or `AGENT_BROWSER_PRO_PASSWORD`
+- `Settings` opens directly by default when no admin lock is configured
+- `Settings` is gated only when `AGENT_BROWSER_PRO_PASSWORD` is configured
+- `pro-mode.flag` remains an explicit local bypass for admin access
 - visible UI text follows the system language heuristic for `ru` and `en`
 
 ## Consequences

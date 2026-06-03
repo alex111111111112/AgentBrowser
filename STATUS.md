@@ -12,9 +12,9 @@ Repository scope:
 Implemented:
 
 - portable Windows package in `AgentBrowser_Windows/`
-- `Start.exe` with admin manifest and runtime orchestration
+- `Start.exe` with runtime orchestration for both `Browser-only Proxy` and `System TUN`
 - `Stop.exe` with safe path-based process shutdown
-- `AgentBrowserUI.exe` with presets, type dropdown, save, test, start, stop
+- `AgentBrowserUI.exe` with presets, runtime-mode selection, save, test, start, stop
 - `ui.log`, `start.log`, `stop.log`, and `core/sing-box.log`
 - `SOCKS5` configuration path
 - `VLESS TCP` input parsing with `TLS` and `Reality`
@@ -43,7 +43,7 @@ Selected first macOS experiment:
 
 ## Stable Areas
 
-- SOCKS-based startup path
+- browser-only startup path
 - process ownership checks by executable path
 - browser lifecycle tracking in `Start.exe`
 - packaged browser launch from `App/Chrome-bin/chrome.exe`
@@ -52,10 +52,11 @@ Selected first macOS experiment:
 ## Known Risks
 
 - `VLESS` runtime behavior depends on the remote endpoint and DNS bootstrap correctness on the target Windows machine
-- `sing-box check` passing does not mean the tunnel is usable
-- `TUN` mode requires admin rights and can fail for local system reasons outside the app
+- `sing-box check` passing does not mean the session is usable
+- `System TUN` mode remains sensitive to admin rights and local machine state outside the app
 - portable browser bundles are large, which complicates rebuilds and repackaging on a nearly full disk
 - browser authentication state may fail to transfer across machines because encrypted browser secrets can be bound to Windows credentials or device state
+- a package left in `System TUN` mode can still surprise operators by routing unrelated applications through the remote server
 
 ## Product Direction
 

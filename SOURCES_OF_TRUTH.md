@@ -25,9 +25,9 @@ Use it when:
 | --- | --- | --- | --- |
 | Product positioning and commercial framing | `README.md` | `STATUS.md`, `AGENTS.md` | Project is a managed browser workspace, not an anti-detect product |
 | Current implementation target | `README.md` section "Current Source Of Truth" | `AGENTS.md`, `STATUS.md` | Windows is active; future macOS work shares the repo but is not yet a delivered runtime |
-| Runtime orchestration behavior | `SingBoxStart/Program.cs`, `SingBoxStop/Program.cs`, `libs/AgentBrowser.Sessions/*` | `ARCHITECTURE.md` | Code is authoritative if docs drift |
-| UI behavior and operator controls | `AgentBrowserUi/Program.cs` | `AgentBrowser_Windows/README.txt`, package manuals | UI code is authoritative |
-| Connection parsing and config generation | `libs/AgentBrowser.Config/*` | `CONFIGURATION.md`, `AgentBrowserUi/Program.cs` | Config library is authoritative |
+| Runtime orchestration behavior | `SingBoxStart/Program.cs`, `SingBoxStop/Program.cs`, `libs/AgentBrowser.Sessions/*` | `ARCHITECTURE.md` | Code is authoritative if docs drift; default mode is browser-only proxy, `System TUN` is advanced |
+| UI behavior and operator controls | `AgentBrowserUi/Program.cs` | `AgentBrowser_Windows/README.txt`, package manuals | UI code is authoritative, including runtime-mode selection and conditional elevation |
+| Connection parsing and config generation | `libs/AgentBrowser.Config/*` | `CONFIGURATION.md`, `AgentBrowserUi/Program.cs` | Config library is authoritative for both `Browser-only Proxy` and `System TUN` generation |
 | Workspace layout and session state files | `libs/AgentBrowser.Workspaces/*` | `ARCHITECTURE.md`, `WORKSPACE_V2_BACKLOG.md` | Includes `workspaces/default/*` conventions |
 | Support bundle contents and diagnostics export | `libs/AgentBrowser.Support/*`, `SupportTool/Program.cs` | `AgentBrowser_Windows/README.txt` | Support runtime behavior is code-driven |
 | Repository hygiene and GitHub publishing | `REPO_SETUP.md`, `.gitignore` | `README.md`, `AGENTS.md` | Source repo tracks code and docs; runtime bundles stay out of normal git history |

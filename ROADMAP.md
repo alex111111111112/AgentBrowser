@@ -2,8 +2,9 @@
 
 ## Near Term
 
+- stabilize `Browser-only Proxy` as the default Windows operator path
+- preserve `System TUN` as an explicit advanced mode with clearer warnings and recovery docs
 - stabilize `VLESS` runtime path on Windows with real-world validation
-- improve UI feedback when `Start.exe` fails after UAC or when helper launch is blocked
 - surface `sing-box` runtime errors inside the UI instead of requiring manual log inspection
 - reduce ambiguity between generated config success and actual connectivity success
 - make packaged builds reproducible and easy to refresh without manual file drift

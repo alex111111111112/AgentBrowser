@@ -510,3 +510,195 @@ Change summary:
 - created the first buildable macOS shell project under `platforms/macos/app/`
 - connected it to shared workspace and diagnostics libraries
 - introduced a separate platform-local macOS solution for future work
+
+## 2026-04-18 15:17:29 +09
+
+Reason for change:
+
+- fix a Windows UI crash when opening `Settings` from the operator screen
+- restore a working operator package after a localization format-string mismatch in `message.settings_locked_info`
+- refresh the external Windows runtime and release zip with the rebuilt `AgentBrowserUI.exe`
+
+Files edited:
+
+- `AgentBrowserUi/Program.cs`
+- `DEVLOG.md`
+
+Package notes:
+
+- rebuilt `AgentBrowserUI.exe` with `dotnet build AgentBrowserUi/AgentBrowserUi.csproj -c Release`
+- published `AgentBrowserUI.exe` with `dotnet publish AgentBrowserUi/AgentBrowserUi.csproj -c Release -r win-x64 --self-contained true`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/AgentBrowserUI.exe`
+- refreshed `/Volumes/Yablocko/AgentBrowser/releases/AgentBrowser_Windows.zip`
+
+Change summary:
+
+- fixed the missing format argument by passing `Environment.NewLine` into the locked-settings message
+- hardened `UiText.Format` so a future placeholder mismatch no longer crashes the entire UI
+- rebuilt and repackaged the Windows operator bundle on external storage
+
+## 2026-04-18 15:17:29 +09
+
+Reason for change:
+
+- simplify the VPN admin flow after feedback that `Settings` had become too hard to reach
+- make the operator/admin lock optional instead of forcing an unlock mechanism during normal preset editing
+- update the packaged manuals to match the new default behavior
+
+Files edited:
+
+- `AgentBrowserUi/Program.cs`
+- `ADR/ADR-0006-operator-main-screen-and-locked-settings.md`
+- `AgentBrowser_Windows/README.txt`
+- `AgentBrowser_Windows/PRO_USER_MANUAL.txt`
+- `DEVLOG.md`
+
+Package notes:
+
+- rebuilt `AgentBrowserUI.exe` with `dotnet build AgentBrowserUi/AgentBrowserUi.csproj -c Release`
+- published `AgentBrowserUI.exe` with `dotnet restore AgentBrowserUi/AgentBrowserUi.csproj -r win-x64` and `dotnet publish AgentBrowserUi/AgentBrowserUi.csproj -c Release -r win-x64 --self-contained true --no-restore`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/AgentBrowserUI.exe`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/README.txt`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/PRO_USER_MANUAL.txt`
+
+Change summary:
+
+- changed `Settings` access so it opens directly when no admin password is configured
+- kept password prompt behavior only for explicitly locked packages using `AGENT_BROWSER_PRO_PASSWORD`
+- retained `pro-mode.flag` as a local bypass for admin access
+
+## 2026-04-18 15:17:29 +09
+
+Reason for change:
+
+- clarify a Windows operator failure where `Start.exe` launch was canceled in the administrator prompt
+- replace the raw system exception text with a specific UAC/admin-rights message
+- update operator-facing docs so non-admin users understand why the session does not start
+
+Files edited:
+
+- `AgentBrowserUi/Program.cs`
+- `AgentBrowser_Windows/BASIC_USER_MANUAL.txt`
+- `AgentBrowser_Windows/README.txt`
+- `DEVLOG.md`
+
+Package notes:
+
+- rebuilt `AgentBrowserUI.exe` with `dotnet build AgentBrowserUi/AgentBrowserUi.csproj -c Release`
+- published `AgentBrowserUI.exe` with `dotnet publish AgentBrowserUi/AgentBrowserUi.csproj -c Release -r win-x64 --self-contained true`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/AgentBrowserUI.exe`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/README.txt`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/BASIC_USER_MANUAL.txt`
+
+Change summary:
+
+- detect Windows `ERROR_CANCELLED` when launching helper executables from the UI
+- show a clear admin/UAC explanation instead of the raw process-start exception
+- documented that `Start.exe` requires confirming the Windows elevation prompt or entering local admin credentials
+
+## 2026-04-18 20:07:51 +09
+
+Reason for change:
+
+- document the observed real-world fallback flow where `Start.exe` is launched manually while `AgentBrowserUI.exe` remains open
+- capture the practical instruction that manual elevation of `Start.exe` still updates the open UI correctly
+- align operator and admin manuals with the tested Windows behavior
+
+Files edited:
+
+- `AgentBrowser_Windows/README.txt`
+- `AgentBrowser_Windows/BASIC_USER_MANUAL.txt`
+- `AgentBrowser_Windows/PRO_USER_MANUAL.txt`
+- `DEVLOG.md`
+
+Package notes:
+
+- no source code changed
+- no binaries were rebuilt
+- refreshed package manuals in `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/`
+- refreshed `/Volumes/Yablocko/AgentBrowser/releases/AgentBrowser_Windows.zip`
+
+Change summary:
+
+- added a documented fallback method: keep UI open, launch `Start.exe` manually, approve UAC, and watch the UI reflect the running session
+- clarified that this is a supported practical recovery path when button-driven elevation is awkward on a given Windows machine
+
+## 2026-04-18 23:01:35 +0900
+
+Reason for change:
+
+- switch the default Windows runtime from machine-wide `System TUN` to `Browser-only Proxy`
+- keep `System TUN` as an explicit advanced mode with conditional elevation only for that path
+- finish the external package refresh so `/Volumes/Yablocko` no longer ships the stale TUN-first runtime state
+
+Files edited:
+
+- `libs/AgentBrowser.Config/RuntimeMode.cs`
+- `libs/AgentBrowser.Config/SingBoxConfigBuilder.cs`
+- `libs/AgentBrowser.Sessions/SessionRuntimeHelpers.cs`
+- `libs/AgentBrowser.Sessions/StartupFlow.cs`
+- `SingBoxStart/app.manifest`
+- `SingBoxStop/app.manifest`
+- `AgentBrowserUi/Program.cs`
+- `README.md`
+- `ARCHITECTURE.md`
+- `CONFIGURATION.md`
+- `STATUS.md`
+- `DEVLOG.md`
+- `AgentBrowser_Windows/README.txt`
+- `AgentBrowser_Windows/BASIC_USER_MANUAL.txt`
+- `AgentBrowser_Windows/PRO_USER_MANUAL.txt`
+- `ADR/ADR-0011-browser-only-proxy-default-with-optional-system-tun.md`
+
+Package notes:
+
+- `dotnet build AgentBrowser.sln -c Release` passed successfully
+- published `AgentBrowserUI.exe`, `Start.exe`, `Stop.exe`, and `SupportTool.exe` for `win-x64`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/AgentBrowserUI.exe`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/Start.exe`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/Stop.exe`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/SupportTool.exe`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/README.txt`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/BASIC_USER_MANUAL.txt`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/PRO_USER_MANUAL.txt`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/ui-settings.json`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/workspaces/default/ui-settings.json`
+- regenerated `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/core/config.json` in `BrowserProxy` mode from the current builder
+- rebuilt `/Volumes/Yablocko/AgentBrowser/releases/AgentBrowser_Windows.zip`
+
+Change summary:
+
+- introduced a shared `RuntimeMode` model so presets, config generation, UI, and startup flow all agree on the selected runtime path
+- made `Browser-only Proxy` the default and recommended operator mode, launching the bundled browser with `--proxy-server=socks5://127.0.0.1:1080`
+- kept `System TUN` as an advanced path and requested elevation with `runas` only when that explicit mode is selected
+- changed `Start.exe` and `Stop.exe` manifests to `asInvoker`, with `wintun.dll` validation only in `System TUN`
+- refreshed the external runtime and release archive so manual `Start.exe` no longer revives the stale TUN-first package state
+
+## 2026-06-03 09:41:34 +0900
+
+Reason for change:
+
+- prevent the UI/start-stop flow from crashing when `core/config.json` is missing, malformed, wrong-shaped, or temporarily unreadable
+- keep `Browser-only Proxy` as the safe fallback runtime mode
+- add focused automated coverage for runtime-mode inference
+
+Files edited:
+
+- `AgentBrowser.sln`
+- `libs/AgentBrowser.Config/SingBoxConfigBuilder.cs`
+- `tests/AgentBrowser.Config.Tests/AgentBrowser.Config.Tests.csproj`
+- `tests/AgentBrowser.Config.Tests/SingBoxConfigBuilderRuntimeModeTests.cs`
+- `DEVLOG.md`
+
+Package notes:
+
+- no package artifacts were refreshed
+- no publish/deploy was run
+- no external runtime or release zip was modified
+- `dotnet build AgentBrowser.sln`, `dotnet test AgentBrowser.sln`, and `dotnet build AgentBrowser.sln -c Release` passed
+
+Change summary:
+
+- added a fail-safe runtime-mode inference guard around config file read/parse failures
+- malformed or wrong-shaped `core/config.json` now falls back to `BrowserProxy` instead of throwing
+- added tests for missing config, SOCKS inbound, TUN inbound, malformed config, non-array `inbounds`, and non-string inbound `type`
