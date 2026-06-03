@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
+using AgentBrowser.Config;
 using AgentBrowser.Diagnostics;
 using AgentBrowser.Workspaces;
 
@@ -114,13 +115,23 @@ internal static class SessionRuntimeHelpers
         return process.Id;
     }
 
-    public static string BuildBrowserArguments(string profileDir)
+    public static string BuildBrowserArguments(string profileDir, RuntimeMode runtimeMode)
     {
-        return string.Join(
-            " ",
+        var arguments = new List<string>
+        {
             $"--user-data-dir=\"{profileDir}\"",
             "--no-first-run",
-            "--force-webrtc-ip-handling-policy=disable_non_proxied_udp");
+            "--force-webrtc-ip-handling-policy=disable_non_proxied_udp"
+        };
+
+        if (runtimeMode == RuntimeMode.BrowserProxy)
+        {
+            arguments.Add($"--proxy-server=socks5://{SingBoxConfigBuilder.LocalSocksListenAddress}:{SingBoxConfigBuilder.LocalSocksListenPort}");
+        }
+
+        return string.Join(
+            " ",
+            arguments);
     }
 
     public static bool WaitForBrowserAppearance(HashSet<string> browserPaths, string logPath, TimeSpan timeout)
