@@ -702,3 +702,36 @@ Change summary:
 - added a fail-safe runtime-mode inference guard around config file read/parse failures
 - malformed or wrong-shaped `core/config.json` now falls back to `BrowserProxy` instead of throwing
 - added tests for missing config, SOCKS inbound, TUN inbound, malformed config, non-array `inbounds`, and non-string inbound `type`
+
+## 2026-06-10 10:12:28 +0900
+
+Reason for change:
+
+- fix PR #1 review findings before any package refresh/deploy gate
+- keep the shared direct connectivity probe client alive across repeated `System TUN` probes
+- preserve existing `System TUN` packages when loading old preset settings that do not yet contain `RuntimeMode`
+
+Files edited:
+
+- `AgentBrowserUi/AgentBrowserUi.csproj`
+- `AgentBrowserUi/Program.cs`
+- `libs/AgentBrowser.Config/SettingsRuntimeModeMigration.cs`
+- `libs/AgentBrowser.Sessions/ConnectivityHttpClientLease.cs`
+- `tests/AgentBrowser.Config.Tests/AgentBrowser.Config.Tests.csproj`
+- `tests/AgentBrowser.Config.Tests/ConnectivityHttpClientLeaseTests.cs`
+- `tests/AgentBrowser.Config.Tests/SettingsRuntimeModeMigrationTests.cs`
+- `DEVLOG.md`
+
+Package notes:
+
+- no package artifacts were refreshed
+- no publish/deploy was run
+- no external runtime or release zip was modified
+- `dotnet build AgentBrowser.sln`, `dotnet test AgentBrowser.sln`, and `dotnet build AgentBrowser.sln -c Release` passed
+
+Change summary:
+
+- replaced the connectivity probe's conditional `using HttpClient` with a runtime-aware lease that only disposes temporary Browser Proxy clients
+- added settings JSON migration for old presets missing `RuntimeMode`, using the current `core/config.json` runtime mode as the fallback
+- made settings deserialization case-insensitive and enum-string aware so old and current settings shapes can be loaded safely
+- added regression tests for both PR #1 findings

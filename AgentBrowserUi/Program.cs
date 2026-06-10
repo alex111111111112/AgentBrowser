@@ -6,9 +6,11 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Windows.Forms;
 using AgentBrowser.Config;
 using AgentBrowser.Diagnostics;
+using AgentBrowser.Sessions;
 using AgentBrowser.Support;
 using AgentBrowser.Workspaces;
 
@@ -739,10 +741,11 @@ internal sealed class MainForm : Form
 
         try
         {
-            using HttpClient connectivityClient = runtimeMode == RuntimeMode.BrowserProxy
-                ? CreateConnectivityHttpClient(useLocalSocksProxy: true)
-                : DirectConnectivityHttpClient;
-            using HttpResponseMessage response = await connectivityClient.GetAsync("https://api.ipify.org/", HttpCompletionOption.ResponseHeadersRead);
+            using ConnectivityHttpClientLease connectivityClientLease = ConnectivityHttpClientLease.ForRuntimeMode(
+                runtimeMode,
+                DirectConnectivityHttpClient,
+                () => CreateConnectivityHttpClient(useLocalSocksProxy: true));
+            using HttpResponseMessage response = await connectivityClientLease.Client.GetAsync("https://api.ipify.org/", HttpCompletionOption.ResponseHeadersRead);
             response.EnsureSuccessStatusCode();
             string ip = (await response.Content.ReadAsStringAsync()).Trim();
 
@@ -1576,15 +1579,22 @@ internal sealed class SettingsDialog : Form
 
 internal static class SettingsStorage
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     public static SettingsData Load(WorkspacePaths workspacePaths, string configPath)
     {
-        SettingsData? workspaceSettings = TryLoadFromPath(workspacePaths.WorkspaceSettingsPath);
+        SettingsData? workspaceSettings = TryLoadFromPath(workspacePaths.WorkspaceSettingsPath, configPath);
         if (workspaceSettings is not null)
         {
             return workspaceSettings;
         }
 
-        SettingsData? legacySettings = TryLoadFromPath(workspacePaths.LegacySettingsPath);
+        SettingsData? legacySettings = TryLoadFromPath(workspacePaths.LegacySettingsPath, configPath);
         if (legacySettings is not null)
         {
             Save(workspacePaths, legacySettings);
@@ -1620,7 +1630,7 @@ internal static class SettingsStorage
 
     public static void Save(WorkspacePaths workspacePaths, SettingsData settings)
     {
-        string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+        string json = JsonSerializer.Serialize(settings, JsonOptions);
         Directory.CreateDirectory(workspacePaths.WorkspaceRootDir);
         File.WriteAllText(workspacePaths.WorkspaceSettingsPath, json, new UTF8Encoding(false));
         File.WriteAllText(workspacePaths.LegacySettingsPath, json, new UTF8Encoding(false));
@@ -1760,7 +1770,7 @@ internal static class SettingsStorage
             .ToList();
     }
 
-    private static SettingsData? TryLoadFromPath(string path)
+    private static SettingsData? TryLoadFromPath(string path, string configPath)
     {
         if (!File.Exists(path))
         {
@@ -1768,9 +1778,11 @@ internal static class SettingsStorage
         }
 
         JsonNode? root = JsonNode.Parse(File.ReadAllText(path));
-        if (root?["presets"] is JsonArray)
+        if (root is not null && SettingsRuntimeModeMigration.HasPresetArray(root))
         {
-            SettingsData settings = JsonSerializer.Deserialize<SettingsData>(root.ToJsonString()) ?? new SettingsData();
+            RuntimeMode runtimeMode = RuntimeConfigService.InferRuntimeMode(configPath);
+            SettingsRuntimeModeMigration.ApplyMissingPresetRuntimeModes(root, runtimeMode);
+            SettingsData settings = JsonSerializer.Deserialize<SettingsData>(root.ToJsonString(), JsonOptions) ?? new SettingsData();
             Normalize(settings);
             return settings;
         }
@@ -1788,7 +1800,7 @@ internal static class SettingsStorage
                     {
                         Name = GetDefaultPresetName(kind),
                         ConnectionType = kind,
-                        RuntimeMode = RuntimeMode.BrowserProxy,
+                        RuntimeMode = RuntimeConfigService.InferRuntimeMode(configPath),
                         ConnectionString = oldConnectionString
                     }
                 }

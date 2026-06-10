@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../libs/AgentBrowser.Config/AgentBrowser.Config.csproj" />
+    <ProjectReference Include="../../libs/AgentBrowser.Sessions/AgentBrowser.Sessions.csproj" />
   </ItemGroup>
 
 </Project>
