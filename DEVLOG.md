@@ -735,3 +735,32 @@ Change summary:
 - added settings JSON migration for old presets missing `RuntimeMode`, using the current `core/config.json` runtime mode as the fallback
 - made settings deserialization case-insensitive and enum-string aware so old and current settings shapes can be loaded safely
 - added regression tests for both PR #1 findings
+
+## 2026-06-10 11:52:47 +0900
+
+Reason for change:
+
+- resolve the package refresh preflight finding where external package docs mentioned HTTP while current source supports only SOCKS/VLESS
+- keep source code as the source of truth for connection types before any package refresh
+- make `Start.exe` and `Stop.exe` publish as standalone single-file executables, matching the current external runtime copy model
+
+Files edited:
+
+- `SingBoxStart/Start.csproj`
+- `SingBoxStop/Stop.csproj`
+- `DEVLOG.md`
+
+Package notes:
+
+- no package artifacts were refreshed
+- no external runtime or release zip was modified
+- Windows manual smoke remains unverified because no Windows machine is available
+- `dotnet build AgentBrowser.sln`, `dotnet test AgentBrowser.sln`, and `dotnet build AgentBrowser.sln -c Release` passed
+- `dotnet publish SingBoxStart/Start.csproj -c Release -r win-x64 --self-contained true -o .publish-check/Start` passed
+- `dotnet publish SingBoxStop/Stop.csproj -c Release -r win-x64 --self-contained true -o .publish-check/Stop` passed
+
+Change summary:
+
+- added `PublishSingleFile` to the `Start` and `Stop` Windows helper projects
+- verified scratch publish output contains standalone `Start.exe` / `Stop.exe` plus PDBs, with no adjacent DLLs required for those helpers
+- confirmed current source/docs do not contain HTTP connection support, so HTTP should not be copied from the external package manuals into a refreshed package unless a separate HTTP-support change is made first
