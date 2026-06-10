@@ -30,6 +30,7 @@ If a new durable document is added and meant to stay in the project, register it
 | `platforms/README.md` | Supporting | maintainers, future platform owners | platform folder layout and naming convention | when platform folder conventions change |
 | `platforms/macos/README.md` | Supporting | maintainers, future macOS owners | foundation scope and directory purpose for future macOS work | when macOS platform skeleton or scope changes |
 | `RELEASE_CHECKLIST.md` | Active | maintainers, release owner | release and package completion checklist | when release process or package completion rules change |
+| `WINDOWS_SMOKE_CHECKLIST.md` | Supporting | Windows tester, release owner | manual Windows smoke handoff checklist for refreshed packages | when Windows smoke expectations or package verification steps change |
 | `CHANGE_CHECKLIST.md` | Active | maintainers, coding agents | non-trivial change completion checklist | when completion rules change |
 | `PULL_REQUEST_TEMPLATE.md` | Supporting | maintainers | structured summary template for PR or change review | when review expectations change |
 | `DECISION_LOG.md` | Active | maintainers, product owner | index of formal architecture and product decisions | when an ADR is added, superseded, or reclassified |

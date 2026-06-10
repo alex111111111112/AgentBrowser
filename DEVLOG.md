@@ -812,3 +812,35 @@ Change summary:
 - refreshed only approved package artifacts on external storage
 - preserved existing sensitive configs and core network runtime files
 - rebuilt the distributable zip from the refreshed runtime folder
+
+## 2026-06-10 15:10:09 +0900
+
+Reason for change:
+
+- prepare a repeatable Windows smoke handoff after the refreshed package passed non-Windows integrity checks
+- make the Windows tester instructions explicit without exposing sensitive runtime configs
+- register the smoke checklist as part of the durable documentation set
+
+Files edited:
+
+- `WINDOWS_SMOKE_CHECKLIST.md`
+- `DOCUMENT_REGISTRY.md`
+- `SOURCES_OF_TRUTH.md`
+- `README.md`
+- `DEVLOG.md`
+
+Package notes:
+
+- no package artifacts were refreshed in this change
+- no external runtime or release zip was modified in this change
+- Windows manual smoke remains pending until a Windows tester runs the checklist
+
+Validation:
+
+- checklist includes artifact hash, required smoke steps, optional System TUN path, pass criteria, and report template
+- checklist instructs testers not to send raw secrets or full config contents
+
+Change summary:
+
+- added a formal handoff document for Windows smoke verification
+- linked the document from the docs index, registry, and sources of truth

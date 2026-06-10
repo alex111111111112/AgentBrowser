@@ -219,6 +219,7 @@ Delivery scope today:
 - `platforms/README.md`
 - `platforms/macos/README.md`
 - `RELEASE_CHECKLIST.md`
+- `WINDOWS_SMOKE_CHECKLIST.md`
 - `CHANGE_CHECKLIST.md`
 - `PULL_REQUEST_TEMPLATE.md`
 - `DECISION_LOG.md`

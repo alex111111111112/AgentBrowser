@@ -36,6 +36,7 @@ Use it when:
 | Current macOS shell behavior | `platforms/macos/app/AgentBrowser.MacShell/*` | `platforms/macos/README.md`, `ARCHITECTURE.md` | This is the implementation source for the first buildable macOS shell |
 | Change completion gate | `CHANGE_CHECKLIST.md`, `AGENTS.md` | `DEVLOG.md`, `PULL_REQUEST_TEMPLATE.md` | Checklist and contributor rules define when a change is done |
 | Release readiness and package sign-off | `RELEASE_CHECKLIST.md` | `AgentBrowser_Windows/README.txt`, `DEVLOG.md` | Release checklist governs package completion |
+| Windows manual smoke handoff | `WINDOWS_SMOKE_CHECKLIST.md` | `RELEASE_CHECKLIST.md`, `DEVLOG.md` | Practical checklist for a Windows tester; release checklist remains the sign-off gate |
 | Current project health and risks | `STATUS.md` | `README.md`, `DEVLOG.md` | `STATUS.md` is the canonical summary |
 | Durable architecture and product decisions | `DECISION_LOG.md`, `ADR/*.md` | `README.md`, `ROADMAP.md` | `DECISION_LOG.md` is the index, ADRs hold the full rationale |
 | Future direction and sequencing | `ROADMAP.md` | `WORKSPACE_V2_BACKLOG.md`, `SESSION_PORTABILITY.md` | Roadmap owns near/mid-term direction |
