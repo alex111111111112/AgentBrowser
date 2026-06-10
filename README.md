@@ -2,7 +2,8 @@
 
 Portable Windows managed browser bundle with:
 
-- `sing-box` in `TUN` mode
+- `Browser-only Proxy` as the default Windows runtime mode
+- optional advanced `System TUN` mode
 - bundled Chromium/Chrome portable runtime
 - local profile directory
 - minimal `Start.exe` and `Stop.exe`
@@ -96,8 +97,8 @@ Current foundation:
 ## Main Components
 
 - `AgentBrowserUi/Program.cs`: Windows UI for presets, config generation, validation, and launching helper executables
-- `SingBoxStart/Program.cs`: privileged launcher that validates config, starts `sing-box`, launches the bundled browser, waits for browser exit, and stops `sing-box`
-- `SingBoxStop/Program.cs`: privileged stopper that kills bundled Chrome and `sing-box` from the same folder only
+- `SingBoxStart/Program.cs`: session launcher that validates config, starts `sing-box` in the selected runtime mode, launches the bundled browser, waits for browser exit, and stops `sing-box`
+- `SingBoxStop/Program.cs`: session stopper that kills bundled Chrome and `sing-box` from the same folder only, with conditional elevation only for `System TUN`
 - `AgentBrowser_Windows/`: ready-to-run Windows package
 
 ## Package Layout
@@ -182,7 +183,8 @@ Recommended flow:
 5. Click `Save`
 6. Click `Start`
 
-`Start.exe` and `Stop.exe` request administrator rights because `sing-box` runs in `TUN` mode.
+`Browser-only Proxy` is the default and recommended runtime mode.
+`Start.exe` and `Stop.exe` run without elevation in that mode and request administrator rights only for explicit `System TUN`.
 
 ## Commercial Direction
 

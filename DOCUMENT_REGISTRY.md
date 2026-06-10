@@ -46,7 +46,7 @@ If a new durable document is added and meant to stay in the project, register it
 | `ADR/README.md` | Supporting | maintainers | conventions for writing and updating ADRs | when ADR process rules change |
 | `ADR/ADR-TEMPLATE.md` | Supporting | maintainers | template for new architecture decision records | when ADR structure expectations change |
 | `ADR/ADR-0001-managed-browser-workspace-positioning.md` | Supporting | maintainers, product owner | decision record for product positioning | when superseded by a later positioning decision |
-| `ADR/ADR-0002-sing-box-tun-runtime.md` | Supporting | engineers | decision record for active network runtime architecture | when superseded by a later runtime decision |
+| `ADR/ADR-0002-sing-box-tun-runtime.md` | Supporting | engineers | decision record for the former TUN-first runtime architecture | when historical runtime context is needed |
 | `ADR/ADR-0003-documentation-governance.md` | Supporting | maintainers | decision record for documentation governance model | when superseded by a later governance decision |
 | `ADR/ADR-0004-basic-pro-ui-modes.md` | Supporting | engineers, product owner | decision record for operator/admin mode split | when superseded by a later UX decision |
 | `ADR/ADR-0005-release-and-change-enforcement.md` | Supporting | maintainers | decision record for release and change completion enforcement | when superseded by a later governance decision |
@@ -55,6 +55,7 @@ If a new durable document is added and meant to stay in the project, register it
 | `ADR/ADR-0008-single-source-repo-for-windows-and-future-macos.md` | Supporting | maintainers, product owner | decision record for using one source repository for current Windows work and future macOS work | when superseded by a later platform-repository decision |
 | `ADR/ADR-0009-platform-specific-source-lives-under-platforms.md` | Supporting | maintainers, platform owners | decision record for platform-specific source living under `platforms/<platform>` while shared logic remains in `libs/` | when superseded by a later platform-layout decision |
 | `ADR/ADR-0010-first-macos-experiment-uses-avalonia-shell.md` | Supporting | maintainers, future macOS owners | decision record for the first macOS experiment using an `Avalonia` shell instead of full runtime parity | when superseded by a later macOS experiment decision |
+| `ADR/ADR-0011-browser-only-proxy-default-with-optional-system-tun.md` | Supporting | engineers, product owner | decision record for browser-only proxy as the Windows default with optional advanced system TUN | when superseded by a later Windows runtime decision |
 | `AgentBrowser_Windows/README.txt` | Package | Windows operator, admin | in-package quick instructions | when package UX or shipped tools change |
 | `AgentBrowser_Windows/BASIC_USER_MANUAL.txt` | Package | operator | short user manual for Basic mode | when operator flow changes |
 | `AgentBrowser_Windows/PRO_USER_MANUAL.txt` | Package | admin | short user manual for Pro mode | when admin flow or gating changes |

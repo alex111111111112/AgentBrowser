@@ -23,7 +23,7 @@ Detailed decisions live in `ADR/`.
 | ADR | Title | Status | Date | Scope |
 | --- | --- | --- | --- | --- |
 | `ADR-0001` | Managed Browser Workspace Positioning | Accepted | 2026-04-18 | product framing |
-| `ADR-0002` | `sing-box` TUN Runtime As The Active Network Architecture | Accepted | 2026-04-18 | runtime architecture |
+| `ADR-0002` | `sing-box` TUN Runtime As The Active Network Architecture | Superseded | 2026-04-18 | former default runtime architecture |
 | `ADR-0003` | Documentation Governance Via Registry, Source Of Truth, And DevLog | Accepted | 2026-04-18 | documentation governance |
 | `ADR-0004` | Basic And Pro Operator Modes In The UI | Superseded | 2026-04-18 | operator UX |
 | `ADR-0005` | Release And Change Checklist Enforcement | Accepted | 2026-04-18 | release governance |
@@ -32,6 +32,7 @@ Detailed decisions live in `ADR/`.
 | `ADR-0008` | Single Source Repository For Windows And Future macOS | Accepted | 2026-04-18 | platform repository scope |
 | `ADR-0009` | Platform-Specific Source Lives Under `platforms/<platform>` | Accepted | 2026-04-18 | platform layout |
 | `ADR-0010` | First macOS Experiment Uses An Avalonia Desktop Shell | Accepted | 2026-04-18 | macOS experiment strategy |
+| `ADR-0011` | Browser-Only Proxy Default With Optional System TUN | Accepted | 2026-04-18 | Windows runtime architecture |
 
 ## Rules
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The project packages a controlled Windows browser environment that launches a bundled Chromium runtime behind a local `sing-box` tunnel, with a simple UI for changing connection settings.
+The project packages a controlled Windows browser environment that launches a bundled Chromium runtime through `sing-box`, with a simple UI for changing connection settings and runtime mode.
 
 It is best understood as a managed browser runtime, not as an anti-detect browser core.
 
@@ -16,7 +16,7 @@ AgentBrowserUI.exe
   -> launches Start.exe
       -> validates files
       -> runs sing-box check
-      -> starts core/sing-box.exe in TUN mode
+      -> starts core/sing-box.exe in the selected runtime mode
       -> launches bundled browser
       -> waits for browser exit
       -> stops sing-box if Start.exe started it
@@ -48,18 +48,17 @@ Responsibilities:
 
 Constraints:
 
-- no direct process ownership of browser or tunnel
+- no direct process ownership of browser or `sing-box`
 - delegates runtime orchestration to helper executables
 
 ### `SingBoxStart`
 
 Responsibilities:
 
-- require administrator privileges
 - verify required files exist
 - verify `sing-box` configuration before launch
 - start `sing-box`
-- start bundled browser with local profile
+- start bundled browser with local profile and explicit proxy args when `Browser-only Proxy` mode is selected
 - wait for browser session end
 - stop `sing-box` if it was started by this process
 - write `start.log`
@@ -69,12 +68,12 @@ Important behavior:
 - skips duplicate launches using a mutex
 - does not kill pre-existing `sing-box` started outside the current run
 - only tracks browser binaries from the same package folder
+- validates `wintun.dll` only when the current config uses `System TUN`
 
 ### `SingBoxStop`
 
 Responsibilities:
 
-- require administrator privileges
 - stop bundled Chrome from the same package only
 - stop `sing-box` from the same package only
 - tolerate transient process inspection failures
@@ -100,7 +99,7 @@ Constraints:
 Responsibilities:
 
 - define DNS behavior
-- define `TUN` inbound
+- define either `Browser-only Proxy` inbound or `System TUN` inbound
 - define active outbound
 - define traffic routing strategy
 
@@ -133,7 +132,8 @@ Legacy artifacts:
 ## Security And Scope Boundaries
 
 - The package is Windows-only at runtime.
-- `Start.exe` and `Stop.exe` require elevated rights because `TUN` mode changes routing.
+- `Browser-only Proxy` is the default operator path and should not affect other applications on the machine.
+- `System TUN` remains available as an advanced mode and may require elevation because it changes machine-wide routing.
 - Process matching is path-based to avoid killing unrelated system browser or tunnel processes.
 - The browser profile is local to the package folder.
 - Browser authentication state is not guaranteed to be portable across Windows machines because sensitive browser secrets may be protected by Windows-bound encryption.

@@ -6,13 +6,16 @@ namespace AgentBrowser.Config;
 
 public static class SingBoxConfigBuilder
 {
-    public static bool TryBuildConfig(string input, ConnectionKind kind, out JsonObject config, out string kindLabel, out string error)
+    public const string LocalSocksListenAddress = "127.0.0.1";
+    public const int LocalSocksListenPort = 1080;
+
+    public static bool TryBuildConfig(string input, ConnectionKind kind, RuntimeMode runtimeMode, out JsonObject config, out string error)
     {
         return kind switch
         {
-            ConnectionKind.Vless => TryBuildVlessConfig(input, out config, out kindLabel, out error),
-            ConnectionKind.Socks => TryBuildSocksConfig(input, out config, out kindLabel, out error),
-            _ => FailBuild(out config, out kindLabel, out error)
+            ConnectionKind.Vless => TryBuildVlessConfig(input, runtimeMode, out config, out error),
+            ConnectionKind.Socks => TryBuildSocksConfig(input, runtimeMode, out config, out error),
+            _ => FailBuild(out config, out error)
         };
     }
 
@@ -21,45 +24,90 @@ public static class SingBoxConfigBuilder
         return new JsonSerializerOptions { WriteIndented = true };
     }
 
-    private static bool TryBuildVlessConfig(string input, out JsonObject config, out string kindLabel, out string error)
+    public static RuntimeMode InferRuntimeModeFromConfigPath(string configPath)
+    {
+        if (!File.Exists(configPath))
+        {
+            return RuntimeMode.BrowserProxy;
+        }
+
+        try
+        {
+            JsonNode? root = JsonNode.Parse(File.ReadAllText(configPath));
+            return InferRuntimeMode(root);
+        }
+        catch (JsonException)
+        {
+            return RuntimeMode.BrowserProxy;
+        }
+        catch (InvalidOperationException)
+        {
+            return RuntimeMode.BrowserProxy;
+        }
+        catch (IOException)
+        {
+            return RuntimeMode.BrowserProxy;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return RuntimeMode.BrowserProxy;
+        }
+    }
+
+    private static RuntimeMode InferRuntimeMode(JsonNode? root)
+    {
+        JsonArray? inbounds = root?["inbounds"]?.AsArray();
+        if (inbounds is null)
+        {
+            return RuntimeMode.BrowserProxy;
+        }
+
+        foreach (JsonNode? node in inbounds)
+        {
+            string? type = node?["type"]?.GetValue<string>();
+            if (string.Equals(type, "tun", StringComparison.OrdinalIgnoreCase))
+            {
+                return RuntimeMode.SystemTun;
+            }
+        }
+
+        return RuntimeMode.BrowserProxy;
+    }
+
+    private static bool TryBuildVlessConfig(string input, RuntimeMode runtimeMode, out JsonObject config, out string error)
     {
         if (ConnectionParser.TryParseVless(input, out VlessConnection? vless, out error))
         {
-            config = BuildVlessConfig(vless);
-            kindLabel = "VLESS Reality/TLS";
+            config = BuildVlessConfig(vless, runtimeMode);
             error = string.Empty;
             return true;
         }
 
         config = new JsonObject();
-        kindLabel = "VLESS";
         return false;
     }
 
-    private static bool TryBuildSocksConfig(string input, out JsonObject config, out string kindLabel, out string error)
+    private static bool TryBuildSocksConfig(string input, RuntimeMode runtimeMode, out JsonObject config, out string error)
     {
         if (ConnectionParser.TryParseSocks(input, out SocksConnection? socks, out error))
         {
-            config = BuildSocksConfig(socks);
-            kindLabel = "SOCKS5";
+            config = BuildSocksConfig(socks, runtimeMode);
             error = string.Empty;
             return true;
         }
 
         config = new JsonObject();
-        kindLabel = "SOCKS5";
         return false;
     }
 
-    private static bool FailBuild(out JsonObject config, out string kindLabel, out string error)
+    private static bool FailBuild(out JsonObject config, out string error)
     {
         config = new JsonObject();
-        kindLabel = string.Empty;
         error = "Unsupported connection type.";
         return false;
     }
 
-    private static JsonObject BuildSocksConfig(SocksConnection connection)
+    private static JsonObject BuildSocksConfig(SocksConnection connection, RuntimeMode runtimeMode)
     {
         JsonObject outbound = new()
         {
@@ -75,10 +123,10 @@ public static class SingBoxConfigBuilder
             outbound["password"] = connection.Password;
         }
 
-        return BuildBaseConfig(outbound);
+        return BuildBaseConfig(outbound, runtimeMode);
     }
 
-    private static JsonObject BuildVlessConfig(VlessConnection connection)
+    private static JsonObject BuildVlessConfig(VlessConnection connection, RuntimeMode runtimeMode)
     {
         JsonObject tls = new()
         {
@@ -126,11 +174,79 @@ public static class SingBoxConfigBuilder
             outbound["flow"] = connection.Flow;
         }
 
-        return BuildBaseConfig(outbound);
+        return BuildBaseConfig(outbound, runtimeMode);
     }
 
-    private static JsonObject BuildBaseConfig(JsonObject outbound)
+    private static JsonObject BuildBaseConfig(JsonObject outbound, RuntimeMode runtimeMode)
     {
+        JsonArray inbounds = runtimeMode switch
+        {
+            RuntimeMode.SystemTun => new JsonArray
+            {
+                new JsonObject
+                {
+                    ["type"] = "tun",
+                    ["tag"] = "tun-in",
+                    ["interface_name"] = "sb-tun",
+                    ["address"] = new JsonArray("172.19.0.1/30", "fdfe:dcba:9876::1/126"),
+                    ["mtu"] = 1500,
+                    ["auto_route"] = true,
+                    ["strict_route"] = true,
+                    ["route_address"] = new JsonArray("0.0.0.0/1", "128.0.0.0/1", "::/1", "8000::/1"),
+                    ["route_exclude_address"] = new JsonArray(
+                        "127.0.0.0/8",
+                        "10.0.0.0/8",
+                        "172.16.0.0/12",
+                        "192.168.0.0/16",
+                        "169.254.0.0/16",
+                        "224.0.0.0/4",
+                        "::1/128",
+                        "fc00::/7",
+                        "fe80::/10"),
+                    ["stack"] = "system"
+                }
+            },
+            _ => new JsonArray
+            {
+                new JsonObject
+                {
+                    ["type"] = "socks",
+                    ["tag"] = "socks-in",
+                    ["listen"] = LocalSocksListenAddress,
+                    ["listen_port"] = LocalSocksListenPort
+                }
+            }
+        };
+
+        JsonArray routeRules = runtimeMode switch
+        {
+            RuntimeMode.SystemTun => new JsonArray
+            {
+                new JsonObject
+                {
+                    ["action"] = "sniff"
+                },
+                new JsonObject
+                {
+                    ["protocol"] = "dns",
+                    ["action"] = "hijack-dns"
+                },
+                new JsonObject
+                {
+                    ["ip_is_private"] = true,
+                    ["outbound"] = "direct"
+                }
+            },
+            _ => new JsonArray
+            {
+                new JsonObject
+                {
+                    ["ip_is_private"] = true,
+                    ["outbound"] = "direct"
+                }
+            }
+        };
+
         return new JsonObject
         {
             ["log"] = new JsonObject
@@ -161,31 +277,7 @@ public static class SingBoxConfigBuilder
                 ["strategy"] = "ipv4_only",
                 ["independent_cache"] = true
             },
-            ["inbounds"] = new JsonArray
-            {
-                new JsonObject
-                {
-                    ["type"] = "tun",
-                    ["tag"] = "tun-in",
-                    ["interface_name"] = "sb-tun",
-                    ["address"] = new JsonArray("172.19.0.1/30", "fdfe:dcba:9876::1/126"),
-                    ["mtu"] = 1500,
-                    ["auto_route"] = true,
-                    ["strict_route"] = true,
-                    ["route_address"] = new JsonArray("0.0.0.0/1", "128.0.0.0/1", "::/1", "8000::/1"),
-                    ["route_exclude_address"] = new JsonArray(
-                        "127.0.0.0/8",
-                        "10.0.0.0/8",
-                        "172.16.0.0/12",
-                        "192.168.0.0/16",
-                        "169.254.0.0/16",
-                        "224.0.0.0/4",
-                        "::1/128",
-                        "fc00::/7",
-                        "fe80::/10"),
-                    ["stack"] = "system"
-                }
-            },
+            ["inbounds"] = inbounds,
             ["outbounds"] = new JsonArray
             {
                 outbound,
@@ -197,23 +289,7 @@ public static class SingBoxConfigBuilder
             },
             ["route"] = new JsonObject
             {
-                ["rules"] = new JsonArray
-                {
-                    new JsonObject
-                    {
-                        ["action"] = "sniff"
-                    },
-                    new JsonObject
-                    {
-                        ["protocol"] = "dns",
-                        ["action"] = "hijack-dns"
-                    },
-                    new JsonObject
-                    {
-                        ["ip_is_private"] = true,
-                        ["outbound"] = "direct"
-                    }
-                },
+                ["rules"] = routeRules,
                 ["auto_detect_interface"] = true,
                 ["default_domain_resolver"] = "local",
                 ["final"] = "proxy"

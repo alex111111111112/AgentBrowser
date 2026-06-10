@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using AgentBrowser.Config;
 using AgentBrowser.Workspaces;
 
 namespace AgentBrowser.Sessions;
@@ -22,10 +23,16 @@ internal static class StartupFlow
 
             SessionLifecycleService.MarkStarting(context.WorkspacePaths, "Preparing browser session startup.", context.RuntimeLayout.SingBoxExecutablePath);
 
+            RuntimeMode runtimeMode = SingBoxConfigBuilder.InferRuntimeModeFromConfigPath(context.RuntimeLayout.SingBoxConfigPath);
+            SessionRuntimeHelpers.Log(context.LogPath, $"Runtime mode resolved from config: {runtimeMode}.");
+
             SessionRuntimeHelpers.ValidateRequiredFile(context.RuntimeLayout.SingBoxExecutablePath, context.LogPath);
             SessionRuntimeHelpers.ValidateRequiredFile(context.RuntimeLayout.SingBoxConfigPath, context.LogPath);
             SessionRuntimeHelpers.ValidateRequiredFile(context.RuntimeLayout.SingBoxCronetPath, context.LogPath);
-            SessionRuntimeHelpers.ValidateRequiredFile(context.RuntimeLayout.WintunDllPath, context.LogPath);
+            if (runtimeMode == RuntimeMode.SystemTun)
+            {
+                SessionRuntimeHelpers.ValidateRequiredFile(context.RuntimeLayout.WintunDllPath, context.LogPath);
+            }
             SessionRuntimeHelpers.ValidateRequiredFile(context.RuntimeLayout.BrowserExecutablePath, context.LogPath);
 
             if (!SessionRuntimeHelpers.ValidateSingBoxConfig(
@@ -122,7 +129,7 @@ internal static class StartupFlow
             {
                 browserLaunchPid = SessionRuntimeHelpers.LaunchBrowserDirect(
                     context.RuntimeLayout.BrowserExecutablePath,
-                    SessionRuntimeHelpers.BuildBrowserArguments(context.RuntimeLayout.ProfileDir),
+                    SessionRuntimeHelpers.BuildBrowserArguments(context.RuntimeLayout.ProfileDir, runtimeMode),
                     context.BaseDir,
                     context.LogPath);
 

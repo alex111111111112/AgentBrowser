@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
@@ -5,9 +6,11 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Windows.Forms;
 using AgentBrowser.Config;
 using AgentBrowser.Diagnostics;
+using AgentBrowser.Sessions;
 using AgentBrowser.Support;
 using AgentBrowser.Workspaces;
 
@@ -99,7 +102,7 @@ internal sealed class MainForm : Form
     private readonly System.Windows.Forms.Timer statusTimer;
     private readonly WorkspacePaths workspacePaths;
 
-    private static readonly HttpClient ConnectivityHttpClient = CreateConnectivityHttpClient();
+    private static readonly HttpClient DirectConnectivityHttpClient = CreateConnectivityHttpClient(useLocalSocksProxy: false);
     private static readonly TimeSpan ConnectivityRefreshInterval = TimeSpan.FromSeconds(10);
 
     private SettingsData settingsData = new();
@@ -263,7 +266,7 @@ internal sealed class MainForm : Form
             Height = 32,
             Text = UiText.Text("button.stop")
         };
-        stopButton.Click += (_, _) => LaunchHelper(StopExeName);
+        stopButton.Click += (_, _) => StopCurrentSession();
 
         settingsButton = new Button
         {
@@ -379,7 +382,7 @@ internal sealed class MainForm : Form
         }
 
         presetValueLabel.Text = preset.Name;
-        summaryValueLabel.Text = BuildMaskedConnectionSummary(preset.ConnectionString.Trim(), preset.ConnectionType);
+        summaryValueLabel.Text = BuildMaskedConnectionSummary(preset.ConnectionString.Trim(), preset.ConnectionType, preset.RuntimeMode);
         startButton.Enabled = true;
         testButton.Enabled = true;
     }
@@ -400,7 +403,7 @@ internal sealed class MainForm : Form
             return;
         }
 
-        LaunchHelper(StartExeName);
+        LaunchHelper(StartExeName, preset.RuntimeMode == RuntimeMode.SystemTun);
     }
 
     private void TestSelectedPreset()
@@ -412,7 +415,7 @@ internal sealed class MainForm : Form
         }
 
         UiLog.Write($"Testing selected preset: {preset.Name} ({preset.ConnectionType}).");
-        ConfigCheckResult result = RuntimeConfigService.RunCheck(BaseDir, preset.ConnectionString, preset.ConnectionType);
+        ConfigCheckResult result = RuntimeConfigService.RunCheck(BaseDir, preset.ConnectionString, preset.ConnectionType, preset.RuntimeMode);
         statusLabel.Text = result.Success ? UiText.Text("status.config_test_passed") : UiText.Text("status.config_test_failed");
         MessageBox.Show(
             this,
@@ -464,17 +467,7 @@ internal sealed class MainForm : Form
         string? configuredPassword = Environment.GetEnvironmentVariable(ProModePasswordEnvVar);
         if (string.IsNullOrWhiteSpace(configuredPassword))
         {
-            if (interactive)
-            {
-                MessageBox.Show(
-                    this,
-                    UiText.Format("message.settings_locked_info", ProModeFlagFileName, ProModePasswordEnvVar),
-                    UiText.Text("app.title"),
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
-            }
-
-            return false;
+            return true;
         }
 
         if (!interactive)
@@ -507,7 +500,13 @@ internal sealed class MainForm : Form
         return true;
     }
 
-    private void LaunchHelper(string fileName)
+    private void StopCurrentSession()
+    {
+        RuntimeMode runtimeMode = RuntimeConfigService.InferRuntimeMode(ConfigPath);
+        LaunchHelper(StopExeName, runtimeMode == RuntimeMode.SystemTun);
+    }
+
+    private void LaunchHelper(string fileName, bool requireElevation)
     {
         string helperPath = Path.Combine(BaseDir, fileName);
         if (!File.Exists(helperPath))
@@ -524,7 +523,8 @@ internal sealed class MainForm : Form
             {
                 FileName = helperPath,
                 WorkingDirectory = BaseDir,
-                UseShellExecute = true
+                UseShellExecute = true,
+                Verb = requireElevation ? "runas" : string.Empty
             });
 
             statusLabel.Text = UiText.Format("status.helper_launched", fileName);
@@ -535,6 +535,18 @@ internal sealed class MainForm : Form
         catch (Exception ex)
         {
             UiLog.WriteException($"Failed to launch {fileName}", ex);
+            if (ex is Win32Exception win32Exception && win32Exception.NativeErrorCode == 1223)
+            {
+                statusLabel.Text = UiText.Format("status.helper_launch_canceled", fileName);
+                MessageBox.Show(
+                    this,
+                    UiText.Format("message.helper_launch_canceled_elevation", fileName),
+                    UiText.Text("app.title"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
             statusLabel.Text = UiText.Format("status.helper_launch_failed", fileName);
             MessageBox.Show(this, ex.Message, UiText.Text("app.title"), MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
@@ -709,17 +721,31 @@ internal sealed class MainForm : Form
         connectivityStatusText = UiText.Text("connection.checking");
         RenderConnectivityState();
         UiLog.Write("Starting connectivity probe.");
-        _ = ProbeConnectionAsync();
+        _ = ProbeConnectionAsync(GetEffectiveRuntimeMode());
     }
 
-    private async Task ProbeConnectionAsync()
+    private RuntimeMode GetEffectiveRuntimeMode()
+    {
+        if (SettingsStorage.GetSelectedPreset(settingsData) is PresetData preset)
+        {
+            return preset.RuntimeMode;
+        }
+
+        return RuntimeConfigService.InferRuntimeMode(ConfigPath);
+    }
+
+    private async Task ProbeConnectionAsync(RuntimeMode runtimeMode)
     {
         string statusText;
         ConnectivityState status;
 
         try
         {
-            using HttpResponseMessage response = await ConnectivityHttpClient.GetAsync("https://api.ipify.org/", HttpCompletionOption.ResponseHeadersRead);
+            using ConnectivityHttpClientLease connectivityClientLease = ConnectivityHttpClientLease.ForRuntimeMode(
+                runtimeMode,
+                DirectConnectivityHttpClient,
+                () => CreateConnectivityHttpClient(useLocalSocksProxy: true));
+            using HttpResponseMessage response = await connectivityClientLease.Client.GetAsync("https://api.ipify.org/", HttpCompletionOption.ResponseHeadersRead);
             response.EnsureSuccessStatusCode();
             string ip = (await response.Content.ReadAsStringAsync()).Trim();
 
@@ -770,25 +796,38 @@ internal sealed class MainForm : Form
         connectionHealthValueLabel.Text = connectivityStatusText;
     }
 
-    private static HttpClient CreateConnectivityHttpClient()
+    private static HttpClient CreateConnectivityHttpClient(bool useLocalSocksProxy)
     {
-        return new HttpClient
+        HttpMessageHandler handler = useLocalSocksProxy
+            ? new HttpClientHandler
+            {
+                UseProxy = true,
+                Proxy = new WebProxy($"socks5://{SingBoxConfigBuilder.LocalSocksListenAddress}:{SingBoxConfigBuilder.LocalSocksListenPort}")
+            }
+            : new HttpClientHandler
+            {
+                UseProxy = false
+            };
+
+        return new HttpClient(handler)
         {
             Timeout = TimeSpan.FromSeconds(5)
         };
     }
 
-    private static string BuildMaskedConnectionSummary(string input, ConnectionKind kind)
+    private static string BuildMaskedConnectionSummary(string input, ConnectionKind kind, RuntimeMode runtimeMode)
     {
+        string modeLine = UiText.Format("summary.mode_line", UiText.FormatRuntimeMode(runtimeMode));
+
         if (string.IsNullOrWhiteSpace(input))
         {
-            return UiText.Text("summary.hidden");
+            return modeLine + Environment.NewLine + UiText.Text("summary.hidden");
         }
 
         if (kind == ConnectionKind.Vless && ConnectionParser.TryParseVless(input, out VlessConnection vless, out _))
         {
             string security = string.IsNullOrWhiteSpace(vless.Security) ? "tls" : vless.Security;
-            return UiText.Format("summary.vless", MaskHost(vless.Host), vless.Port, security, MaskToken(vless.Uuid));
+            return modeLine + Environment.NewLine + UiText.Format("summary.vless", MaskHost(vless.Host), vless.Port, security, MaskToken(vless.Uuid));
         }
 
         if (ConnectionParser.TryParseSocks(input, out SocksConnection socks, out _))
@@ -796,10 +835,10 @@ internal sealed class MainForm : Form
             string authMode = string.IsNullOrWhiteSpace(socks.Username)
                 ? UiText.Text("summary.socks_no_auth")
                 : UiText.Text("summary.socks_auth_set");
-            return UiText.Format("summary.socks", MaskHost(socks.Host), socks.Port, authMode);
+            return modeLine + Environment.NewLine + UiText.Format("summary.socks", MaskHost(socks.Host), socks.Port, authMode);
         }
 
-        return UiText.Text("summary.hidden");
+        return modeLine + Environment.NewLine + UiText.Text("summary.hidden");
     }
 
     private static string MaskHost(string host)
@@ -846,6 +885,7 @@ internal sealed class SettingsDialog : Form
     private readonly ComboBox presetComboBox;
     private readonly TextBox presetNameTextBox;
     private readonly ComboBox connectionTypeComboBox;
+    private readonly ComboBox runtimeModeComboBox;
     private readonly TextBox connectionTextBox;
     private readonly Label exampleLabel;
     private readonly Label validationLabel;
@@ -980,12 +1020,44 @@ internal sealed class SettingsDialog : Form
             hasUnsavedChanges = true;
         };
 
+        var runtimeModeCaptionLabel = new Label
+        {
+            AutoSize = true,
+            Left = 742,
+            Top = 68,
+            Text = UiText.Text("settings.runtime_mode")
+        };
+
+        runtimeModeComboBox = new ComboBox
+        {
+            Left = 742,
+            Top = 88,
+            Width = 162,
+            DropDownStyle = ComboBoxStyle.DropDownList
+        };
+        runtimeModeComboBox.Items.AddRange(new object[]
+        {
+            SettingsStorage.FormatRuntimeMode(RuntimeMode.BrowserProxy),
+            SettingsStorage.FormatRuntimeMode(RuntimeMode.SystemTun)
+        });
+        runtimeModeComboBox.SelectedIndexChanged += (_, _) =>
+        {
+            if (suppressEditorEvents)
+            {
+                return;
+            }
+
+            RefreshExampleText();
+            RefreshValidationState();
+            hasUnsavedChanges = true;
+        };
+
         exampleLabel = new Label
         {
             Left = 16,
             Top = 126,
             Width = 888,
-            Height = 40,
+            Height = 54,
             Font = new Font("Consolas", 9F),
             Text = string.Empty
         };
@@ -1062,6 +1134,8 @@ internal sealed class SettingsDialog : Form
         Controls.Add(presetNameTextBox);
         Controls.Add(connectionTypeCaptionLabel);
         Controls.Add(connectionTypeComboBox);
+        Controls.Add(runtimeModeCaptionLabel);
+        Controls.Add(runtimeModeComboBox);
         Controls.Add(exampleLabel);
         Controls.Add(connectionTextBox);
         Controls.Add(validationLabel);
@@ -1084,6 +1158,7 @@ internal sealed class SettingsDialog : Form
             suppressEditorEvents = true;
             presetNameTextBox.Text = SettingsStorage.GetDefaultPresetName(ConnectionKind.Socks);
             connectionTypeComboBox.SelectedItem = "SOCKS5";
+            runtimeModeComboBox.SelectedItem = SettingsStorage.FormatRuntimeMode(RuntimeMode.BrowserProxy);
             connectionTextBox.Text = string.Empty;
             suppressEditorEvents = false;
             currentPresetName = string.Empty;
@@ -1158,6 +1233,7 @@ internal sealed class SettingsDialog : Form
         suppressEditorEvents = true;
         presetNameTextBox.Text = preset.Name;
         connectionTypeComboBox.SelectedItem = SettingsStorage.FormatConnectionKind(preset.ConnectionType);
+        runtimeModeComboBox.SelectedItem = SettingsStorage.FormatRuntimeMode(preset.RuntimeMode);
         connectionTextBox.Text = preset.ConnectionString;
         suppressEditorEvents = false;
         RefreshExampleText();
@@ -1178,11 +1254,13 @@ internal sealed class SettingsDialog : Form
     private void RefreshExampleText()
     {
         ConnectionKind kind = GetSelectedConnectionKind();
-        exampleLabel.Text = kind switch
+        RuntimeMode runtimeMode = GetSelectedRuntimeMode();
+        string exampleText = kind switch
         {
             ConnectionKind.Vless => UiText.Text("settings.example_vless"),
             _ => UiText.Text("settings.example_socks")
         };
+        exampleLabel.Text = exampleText + Environment.NewLine + UiText.Format("settings.runtime_hint", SettingsStorage.FormatRuntimeMode(runtimeMode));
     }
 
     private void RefreshValidationState()
@@ -1190,6 +1268,7 @@ internal sealed class SettingsDialog : Form
         string input = connectionTextBox.Text.Trim();
         string presetName = presetNameTextBox.Text.Trim();
         ConnectionKind selectedKind = GetSelectedConnectionKind();
+        RuntimeMode selectedRuntimeMode = GetSelectedRuntimeMode();
 
         if (string.IsNullOrWhiteSpace(input))
         {
@@ -1207,7 +1286,7 @@ internal sealed class SettingsDialog : Form
             return;
         }
 
-        if (RuntimeConfigService.TryBuildConfig(input, selectedKind, out _, out string kindLabel, out string error))
+        if (RuntimeConfigService.TryBuildConfig(input, selectedKind, selectedRuntimeMode, out _, out string kindLabel, out string error))
         {
             validationLabel.Text = UiText.Format("settings.validation_ok", kindLabel);
             applyButton.Enabled = true;
@@ -1264,6 +1343,7 @@ internal sealed class SettingsDialog : Form
         {
             Name = newName,
             ConnectionType = source.ConnectionType,
+            RuntimeMode = source.RuntimeMode,
             ConnectionString = source.ConnectionString
         };
 
@@ -1384,8 +1464,9 @@ internal sealed class SettingsDialog : Form
 
         string input = connectionTextBox.Text.Trim();
         ConnectionKind selectedKind = GetSelectedConnectionKind();
+        RuntimeMode selectedRuntimeMode = GetSelectedRuntimeMode();
 
-        if (!RuntimeConfigService.TryBuildConfig(input, selectedKind, out JsonObject? config, out string kindLabel, out string error))
+        if (!RuntimeConfigService.TryBuildConfig(input, selectedKind, selectedRuntimeMode, out JsonObject? config, out string kindLabel, out string error))
         {
             UiLog.Write($"Apply rejected for preset \"{presetName}\": {error}");
             statusLabel.Text = error;
@@ -1402,6 +1483,7 @@ internal sealed class SettingsDialog : Form
             {
                 Name = presetName,
                 ConnectionType = selectedKind,
+                RuntimeMode = selectedRuntimeMode,
                 ConnectionString = input
             });
             settingsData.SelectedPresetName = presetName;
@@ -1440,9 +1522,10 @@ internal sealed class SettingsDialog : Form
     {
         string input = connectionTextBox.Text.Trim();
         ConnectionKind selectedKind = GetSelectedConnectionKind();
-        UiLog.Write($"Testing configuration in settings for mode {selectedKind}.");
+        RuntimeMode selectedRuntimeMode = GetSelectedRuntimeMode();
+        UiLog.Write($"Testing configuration in settings for mode {selectedKind} / {selectedRuntimeMode}.");
 
-        ConfigCheckResult result = RuntimeConfigService.RunCheck(baseDir, input, selectedKind);
+        ConfigCheckResult result = RuntimeConfigService.RunCheck(baseDir, input, selectedKind, selectedRuntimeMode);
         statusLabel.Text = result.Success ? UiText.Text("status.config_test_passed") : UiText.Text("status.config_test_failed");
         MessageBox.Show(
             this,
@@ -1487,19 +1570,31 @@ internal sealed class SettingsDialog : Form
     {
         return SettingsStorage.ParseConnectionKind(connectionTypeComboBox.SelectedItem?.ToString()) ?? ConnectionKind.Socks;
     }
+
+    private RuntimeMode GetSelectedRuntimeMode()
+    {
+        return SettingsStorage.ParseRuntimeMode(runtimeModeComboBox.SelectedItem?.ToString()) ?? RuntimeMode.BrowserProxy;
+    }
 }
 
 internal static class SettingsStorage
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     public static SettingsData Load(WorkspacePaths workspacePaths, string configPath)
     {
-        SettingsData? workspaceSettings = TryLoadFromPath(workspacePaths.WorkspaceSettingsPath);
+        SettingsData? workspaceSettings = TryLoadFromPath(workspacePaths.WorkspaceSettingsPath, configPath);
         if (workspaceSettings is not null)
         {
             return workspaceSettings;
         }
 
-        SettingsData? legacySettings = TryLoadFromPath(workspacePaths.LegacySettingsPath);
+        SettingsData? legacySettings = TryLoadFromPath(workspacePaths.LegacySettingsPath, configPath);
         if (legacySettings is not null)
         {
             Save(workspacePaths, legacySettings);
@@ -1510,6 +1605,7 @@ internal static class SettingsStorage
         if (!string.IsNullOrWhiteSpace(inferredConnection))
         {
             ConnectionKind kind = DetectConnectionKind(inferredConnection);
+            RuntimeMode runtimeMode = RuntimeConfigService.InferRuntimeMode(configPath);
             var inferredSettings = new SettingsData
             {
                 SelectedPresetName = "Imported",
@@ -1519,6 +1615,7 @@ internal static class SettingsStorage
                     {
                         Name = "Imported",
                         ConnectionType = kind,
+                        RuntimeMode = runtimeMode,
                         ConnectionString = inferredConnection
                     }
                 }
@@ -1533,7 +1630,7 @@ internal static class SettingsStorage
 
     public static void Save(WorkspacePaths workspacePaths, SettingsData settings)
     {
-        string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+        string json = JsonSerializer.Serialize(settings, JsonOptions);
         Directory.CreateDirectory(workspacePaths.WorkspaceRootDir);
         File.WriteAllText(workspacePaths.WorkspaceSettingsPath, json, new UTF8Encoding(false));
         File.WriteAllText(workspacePaths.LegacySettingsPath, json, new UTF8Encoding(false));
@@ -1550,6 +1647,7 @@ internal static class SettingsStorage
                 {
                     Name = p.Name,
                     ConnectionType = p.ConnectionType,
+                    RuntimeMode = p.RuntimeMode,
                     ConnectionString = p.ConnectionString
                 })
                 .ToList()
@@ -1589,6 +1687,7 @@ internal static class SettingsStorage
         }
 
         existing.ConnectionType = preset.ConnectionType;
+        existing.RuntimeMode = preset.RuntimeMode;
         existing.ConnectionString = preset.ConnectionString;
     }
 
@@ -1631,9 +1730,36 @@ internal static class SettingsStorage
         };
     }
 
+    public static string FormatRuntimeMode(RuntimeMode runtimeMode)
+    {
+        return UiText.FormatRuntimeMode(runtimeMode);
+    }
+
     public static ConnectionKind? ParseConnectionKind(string? value)
     {
         return ConnectionParser.TryParseConnectionKind(value);
+    }
+
+    public static RuntimeMode? ParseRuntimeMode(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        if (string.Equals(value, UiText.FormatRuntimeMode(RuntimeMode.BrowserProxy), StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, RuntimeMode.BrowserProxy.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            return RuntimeMode.BrowserProxy;
+        }
+
+        if (string.Equals(value, UiText.FormatRuntimeMode(RuntimeMode.SystemTun), StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, RuntimeMode.SystemTun.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            return RuntimeMode.SystemTun;
+        }
+
+        return null;
     }
 
     private static void Normalize(SettingsData settings)
@@ -1644,7 +1770,7 @@ internal static class SettingsStorage
             .ToList();
     }
 
-    private static SettingsData? TryLoadFromPath(string path)
+    private static SettingsData? TryLoadFromPath(string path, string configPath)
     {
         if (!File.Exists(path))
         {
@@ -1652,9 +1778,11 @@ internal static class SettingsStorage
         }
 
         JsonNode? root = JsonNode.Parse(File.ReadAllText(path));
-        if (root?["presets"] is JsonArray)
+        if (root is not null && SettingsRuntimeModeMigration.HasPresetArray(root))
         {
-            SettingsData settings = JsonSerializer.Deserialize<SettingsData>(root.ToJsonString()) ?? new SettingsData();
+            RuntimeMode runtimeMode = RuntimeConfigService.InferRuntimeMode(configPath);
+            SettingsRuntimeModeMigration.ApplyMissingPresetRuntimeModes(root, runtimeMode);
+            SettingsData settings = JsonSerializer.Deserialize<SettingsData>(root.ToJsonString(), JsonOptions) ?? new SettingsData();
             Normalize(settings);
             return settings;
         }
@@ -1672,6 +1800,7 @@ internal static class SettingsStorage
                     {
                         Name = GetDefaultPresetName(kind),
                         ConnectionType = kind,
+                        RuntimeMode = RuntimeConfigService.InferRuntimeMode(configPath),
                         ConnectionString = oldConnectionString
                     }
                 }
@@ -1791,12 +1920,18 @@ internal static class RuntimeConfigService
 {
     public static bool TryBuildConfig(string input, ConnectionKind kind, out JsonObject config, out string kindLabel, out string error)
     {
-        return SingBoxConfigBuilder.TryBuildConfig(input, kind, out config, out kindLabel, out error);
+        return TryBuildConfig(input, kind, RuntimeMode.BrowserProxy, out config, out kindLabel, out error);
+    }
+
+    public static bool TryBuildConfig(string input, ConnectionKind kind, RuntimeMode runtimeMode, out JsonObject config, out string kindLabel, out string error)
+    {
+        kindLabel = BuildKindLabel(kind, runtimeMode);
+        return SingBoxConfigBuilder.TryBuildConfig(input, kind, runtimeMode, out config, out error);
     }
 
     public static bool TryApplyPreset(string baseDir, PresetData preset, out string kindLabel, out string error)
     {
-        if (!TryBuildConfig(preset.ConnectionString, preset.ConnectionType, out JsonObject? config, out kindLabel, out error))
+        if (!TryBuildConfig(preset.ConnectionString, preset.ConnectionType, preset.RuntimeMode, out JsonObject? config, out kindLabel, out error))
         {
             return false;
         }
@@ -1807,9 +1942,9 @@ internal static class RuntimeConfigService
         return true;
     }
 
-    public static ConfigCheckResult RunCheck(string baseDir, string input, ConnectionKind kind)
+    public static ConfigCheckResult RunCheck(string baseDir, string input, ConnectionKind kind, RuntimeMode runtimeMode)
     {
-        if (!TryBuildConfig(input, kind, out JsonObject? config, out _, out string error))
+        if (!TryBuildConfig(input, kind, runtimeMode, out JsonObject? config, out _, out string error))
         {
             UiLog.Write($"Config test rejected: {error}");
             return new ConfigCheckResult(false, error);
@@ -1910,6 +2045,20 @@ internal static class RuntimeConfigService
 
         return string.Join(Environment.NewLine, parts);
     }
+
+    public static RuntimeMode InferRuntimeMode(string configPath)
+    {
+        return SingBoxConfigBuilder.InferRuntimeModeFromConfigPath(configPath);
+    }
+
+    private static string BuildKindLabel(ConnectionKind kind, RuntimeMode runtimeMode)
+    {
+        return string.Format(
+            CultureInfo.CurrentCulture,
+            "{0} / {1}",
+            SettingsStorage.FormatConnectionKind(kind),
+            SettingsStorage.FormatRuntimeMode(runtimeMode));
+    }
 }
 
 internal sealed record ConfigCheckResult(bool Success, string Message);
@@ -1992,6 +2141,7 @@ internal sealed class PresetData
 {
     public string Name { get; set; } = string.Empty;
     public ConnectionKind ConnectionType { get; set; }
+    public RuntimeMode RuntimeMode { get; set; } = RuntimeMode.BrowserProxy;
     public string ConnectionString { get; set; } = string.Empty;
 }
 
@@ -2016,7 +2166,7 @@ internal static class UiText
         ["error.unexpected_ui"] = ("Unexpected UI error. See ui.log for details.", "Непредвиденная ошибка интерфейса. Подробности смотрите в ui.log."),
         ["error.fatal_startup"] = ("AgentBrowserUI.exe failed to start. See ui.log for details.", "AgentBrowserUI.exe не запустился. Подробности смотрите в ui.log."),
         ["main.title"] = ("Agent Browser Control", "Управление Agent Browser"),
-        ["main.hint"] = ("Basic mode is for operators: start, stop, test, and watch the connection state. Open Settings only for admin changes.", "Basic режим предназначен для оператора: запуск, остановка, тест и контроль состояния соединения. Настройки открывайте только для административных изменений."),
+        ["main.hint"] = ("Basic mode is for operators: start, stop, test, and watch the connection state. Browser-only proxy mode is recommended. Open Settings only for admin changes.", "Basic режим предназначен для оператора: запуск, остановка, тест и контроль состояния соединения. По умолчанию рекомендуется режим только для браузера. Настройки открывайте только для административных изменений."),
         ["main.current_preset"] = ("Current preset", "Текущий пресет"),
         ["main.connection_summary"] = ("Connection summary", "Сводка подключения"),
         ["main.status"] = ("Status", "Статус"),
@@ -2043,6 +2193,7 @@ internal static class UiText
         ["status.initial_apply_failed"] = ("Preset loaded, but applying core\\config.json failed.", "Пресет загружен, но запись core\\config.json не удалась."),
         ["status.helper_launched"] = ("{0} launched.", "{0} запущен."),
         ["status.helper_launch_failed"] = ("Failed to launch {0}.", "Не удалось запустить {0}."),
+        ["status.helper_launch_canceled"] = ("{0} launch was canceled in the Windows admin prompt.", "Запуск {0} был отменён в окне запроса прав Windows."),
         ["status.bundle_export_canceled"] = ("Support bundle export canceled.", "Экспорт support bundle отменён."),
         ["status.bundle_export_failed"] = ("Support bundle export failed.", "Экспорт support bundle не удался."),
         ["status.bundle_exported"] = ("Support bundle exported.", "Support bundle экспортирован."),
@@ -2059,14 +2210,16 @@ internal static class UiText
         ["status.preset_renamed"] = ("Renamed preset \"{0}\".", "Пресет \"{0}\" переименован."),
         ["status.preset_deleted"] = ("Deleted preset \"{0}\".", "Пресет \"{0}\" удалён."),
         ["settings.title"] = ("Agent Browser Settings", "Настройки Agent Browser"),
-        ["settings.hint"] = ("This screen is for admins. Change presets here, then click Apply to save the settings and activate the selected preset.", "Этот экран предназначен для администратора. Меняйте здесь пресеты, затем нажмите Применить, чтобы сохранить настройки и активировать выбранный пресет."),
+        ["settings.hint"] = ("This screen is for admins. Change presets and runtime mode here, then click Apply to save the settings and activate the selected preset. Browser-only Proxy is the recommended default.", "Этот экран предназначен для администратора. Меняйте здесь пресеты и режим маршрутизации, затем нажмите Применить, чтобы сохранить настройки и активировать выбранный пресет. Рекомендуемый режим по умолчанию: прокси только для браузера."),
         ["settings.preset"] = ("Preset", "Пресет"),
         ["settings.name"] = ("Name", "Имя"),
         ["settings.type"] = ("Type", "Тип"),
+        ["settings.runtime_mode"] = ("Runtime mode", "Режим маршрутизации"),
         ["settings.ready"] = ("Ready. Press Apply to persist admin changes.", "Готово. Нажмите Применить, чтобы сохранить административные изменения."),
         ["settings.no_presets"] = ("No saved presets. Enter a new preset and click Apply.", "Сохранённых пресетов нет. Введите новый пресет и нажмите Применить."),
         ["settings.example_vless"] = ("Example VLESS: vless://uuid@host:443?encryption=none&flow=xtls-rprx-vision&type=tcp&security=reality&sni=host&fp=chrome&pbk=...&sid=...", "Пример VLESS: vless://uuid@host:443?encryption=none&flow=xtls-rprx-vision&type=tcp&security=reality&sni=host&fp=chrome&pbk=...&sid=..."),
         ["settings.example_socks"] = ("Example SOCKS5: 50.118.198.32:64011:Ek5R3AJg:prGqb63R", "Пример SOCKS5: 50.118.198.32:64011:Ek5R3AJg:prGqb63R"),
+        ["settings.runtime_hint"] = ("Runtime: {0}", "Режим: {0}"),
         ["settings.validation_mode"] = ("Mode: {0}", "Режим: {0}"),
         ["settings.validation_ok"] = ("Mode: {0}", "Режим: {0}"),
         ["settings.validation_name_required"] = ("Preset name is required.", "Нужно указать имя пресета."),
@@ -2079,6 +2232,7 @@ internal static class UiText
         ["dialog.rename_title"] = ("Rename Preset", "Переименовать пресет"),
         ["dialog.rename_prompt"] = ("Enter a new preset name:", "Введите новое имя пресета:"),
         ["message.missing_file"] = ("Missing file:\n{0}", "Отсутствует файл:\n{0}"),
+        ["message.helper_launch_canceled_elevation"] = ("{0} requires administrator rights for the selected System TUN mode. The Windows elevation prompt was canceled. Click Start again and approve the UAC prompt, or enter an administrator password on that PC.", "{0} требует права администратора для выбранного режима Системный TUN. Запрос повышения прав Windows был отменён. Нажмите Start ещё раз и подтвердите окно UAC, либо введите пароль администратора на этом компьютере."),
         ["message.bundle_exported"] = ("Support bundle exported:{2}{0}{2}{2}Included files: {1}", "Support bundle экспортирован:{2}{0}{2}{2}Включено файлов: {1}"),
         ["message.config_test_passed"] = ("Config test passed.", "Тест конфигурации пройден."),
         ["message.config_test_failed_exit"] = ("sing-box check failed. ExitCode={0}.", "Проверка sing-box не пройдена. ExitCode={0}."),
@@ -2092,19 +2246,22 @@ internal static class UiText
         ["message.preset_name_required"] = ("Preset name is required.", "Нужно указать имя пресета."),
         ["message.settings_applied_preset"] = ("Preset \"{0}\" was saved and activated as {1}.", "Пресет \"{0}\" сохранён и активирован как {1}."),
         ["message.discard_changes"] = ("Discard unsaved settings changes?", "Отменить несохранённые изменения настроек?"),
-        ["connection.tunnel_starting"] = ("Tunnel starting...", "Туннель запускается..."),
-        ["connection.tunnel_stopping"] = ("Tunnel stopping...", "Туннель останавливается..."),
-        ["connection.tunnel_stopped"] = ("Tunnel stopped.", "Туннель остановлен."),
+        ["connection.tunnel_starting"] = ("Session starting...", "Сессия запускается..."),
+        ["connection.tunnel_stopping"] = ("Session stopping...", "Сессия останавливается..."),
+        ["connection.tunnel_stopped"] = ("Connection is inactive.", "Соединение не активно."),
         ["connection.session_error"] = ("Session error.", "Ошибка сессии."),
         ["connection.checking"] = ("Checking connection...", "Проверка соединения..."),
         ["connection.connected"] = ("Connected.", "Соединение установлено."),
         ["connection.connected_via"] = ("Connected via {0}", "Подключено через {0}"),
         ["connection.failed"] = ("Connection failed: {0}", "Соединение не удалось: {0}"),
+        ["summary.mode_line"] = ("Runtime mode: {0}", "Режим маршрутизации: {0}"),
         ["summary.hidden"] = ("Connection details are hidden in Basic mode.", "Детали подключения скрыты в Basic режиме."),
         ["summary.vless"] = ("Saved VLESS: host={0}, port={1}, security={2}, id={3}", "Сохранённый VLESS: host={0}, port={1}, security={2}, id={3}"),
         ["summary.socks"] = ("Saved SOCKS5: host={0}, port={1}, {2}", "Сохранённый SOCKS5: host={0}, port={1}, {2}"),
         ["summary.socks_no_auth"] = ("no auth", "без авторизации"),
-        ["summary.socks_auth_set"] = ("auth set", "авторизация задана")
+        ["summary.socks_auth_set"] = ("auth set", "авторизация задана"),
+        ["runtime_mode.browser_proxy"] = ("Browser-only Proxy (Recommended)", "Прокси только для браузера (рекомендуется)"),
+        ["runtime_mode.system_tun"] = ("System TUN (Advanced)", "Системный TUN (для продвинутых)")
     };
 
     public static string Text(string key)
@@ -2115,7 +2272,16 @@ internal static class UiText
 
     public static string Format(string key, params object[] args)
     {
-        return string.Format(CultureInfo.CurrentCulture, Text(key), args);
+        string format = Text(key);
+
+        try
+        {
+            return string.Format(CultureInfo.CurrentCulture, format, args);
+        }
+        catch (FormatException)
+        {
+            return format;
+        }
     }
 
     public static string FormatSessionState(SessionState state)
@@ -2127,6 +2293,15 @@ internal static class UiText
             SessionState.Stopping => IsRussian ? "Остановка" : "Stopping",
             SessionState.Error => IsRussian ? "Ошибка" : "Error",
             _ => IsRussian ? "Остановлено" : "Stopped"
+        };
+    }
+
+    public static string FormatRuntimeMode(RuntimeMode runtimeMode)
+    {
+        return runtimeMode switch
+        {
+            RuntimeMode.SystemTun => Text("runtime_mode.system_tun"),
+            _ => Text("runtime_mode.browser_proxy")
         };
     }
 }

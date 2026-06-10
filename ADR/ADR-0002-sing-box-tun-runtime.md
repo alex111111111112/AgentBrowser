@@ -1,7 +1,11 @@
 # ADR-0002: `sing-box` TUN Runtime As The Active Network Architecture
 
-- Status: Accepted
+- Status: Superseded
 - Date: 2026-04-18
+
+Superseded by:
+
+- `ADR-0011-browser-only-proxy-default-with-optional-system-tun.md`
 
 ## Context
 
@@ -40,4 +44,3 @@ Negative:
 
 - `TUN` requires admin rights
 - Windows-local networking issues can still break the session even if config validation passes
-
