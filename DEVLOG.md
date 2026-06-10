@@ -764,3 +764,51 @@ Change summary:
 - added `PublishSingleFile` to the `Start` and `Stop` Windows helper projects
 - verified scratch publish output contains standalone `Start.exe` / `Stop.exe` plus PDBs, with no adjacent DLLs required for those helpers
 - confirmed current source/docs do not contain HTTP connection support, so HTTP should not be copied from the external package manuals into a refreshed package unless a separate HTTP-support change is made first
+
+## 2026-06-10 14:48:01 +0900
+
+Reason for change:
+
+- refresh the external Windows runtime and release zip after PR #2 merged
+- align shipped package manuals with current source docs and remove the stale external HTTP wording
+- keep existing sensitive runtime settings while updating binaries and package docs
+
+Files edited:
+
+- `DEVLOG.md`
+
+Package notes:
+
+- backup created at `/Volumes/Yablocko/AgentBrowser/backups/20260610-144147`
+- fresh publish output created at `.publish-refresh/20260610-144321`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/AgentBrowserUI.exe`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/Start.exe`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/Stop.exe`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/SupportTool.exe`
+- refreshed WPF runtime DLLs in `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/README.txt`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/BASIC_USER_MANUAL.txt`
+- refreshed `/Volumes/Yablocko/AgentBrowser/runtime/AgentBrowser_Windows/PRO_USER_MANUAL.txt`
+- rebuilt `/Volumes/Yablocko/AgentBrowser/releases/AgentBrowser_Windows.zip`
+- kept `ui-settings.json`, `workspaces/default/ui-settings.json`, and `core/config.json` unchanged
+- kept `core/sing-box.exe`, `core/wintun.dll`, and `core/libcronet.dll` unchanged
+- Windows manual smoke remains unverified because no Windows machine is available
+
+Validation:
+
+- external manuals now match repo package manuals
+- external manuals no longer contain HTTP wording
+- `zip_junk=absent`
+- zip entries: `1512`
+- `unzip -tqq /Volumes/Yablocko/AgentBrowser/releases/AgentBrowser_Windows.zip` passed
+- zip SHA256: `24bf57f1614c0cbc8be91f515657e81f596989f2e46c8aa4b800a48c159b737d`
+- `AgentBrowserUI.exe` SHA256: `a601020eaa777fc07319d478993b09910889a18a0e7cbf952c52686d77214f10`
+- `Start.exe` SHA256: `af7739ff29f51324b4a500800904516dec7dbeb9ef4546c7a9990e1f79a72846`
+- `Stop.exe` SHA256: `6cd0bfaf9a6be3638617b8783d208d9e1ae0301ead70b855af6d909230faccee`
+- `SupportTool.exe` SHA256: `8b2eb043bb9a07c67731adbaddf4e2b23359899617f0a22f850a84912803ba52`
+
+Change summary:
+
+- refreshed only approved package artifacts on external storage
+- preserved existing sensitive configs and core network runtime files
+- rebuilt the distributable zip from the refreshed runtime folder
